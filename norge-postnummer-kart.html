@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Norge Postnummerkart - Interaktiv</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: white;
+            padding: 20px;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #1c1e21;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #65676b;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .textarea-wrapper {
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #dcdcdc;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #42b72a;
+            border-style: solid;
+            box-shadow: 0 0 0 2px rgba(66, 183, 42, 0.1);
+        }
+
+        textarea.dragover {
+            border-color: #42b72a;
+            background: rgba(66, 183, 42, 0.05);
+            border-style: solid;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .btn-primary {
+            background: #42b72a;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #36a420;
+        }
+
+        .btn-secondary {
+            background: #e4e6eb;
+            color: #1c1e21;
+        }
+
+        .btn-secondary:hover {
+            background: #d8dadf;
+        }
+
+        .btn-export {
+            background: #1877f2;
+            color: white;
+            margin-top: 15px;
+        }
+
+        .btn-export:hover {
+            background: #166fe5;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            background: #f0f2f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .stat-label {
+            color: #65676b;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #1c1e21;
+        }
+
+        .selected-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f0f2f5;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .selected-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #f02849;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: rgba(240, 40, 73, 0.1);
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #1877f2;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #1c1e21;
+            margin-bottom: 15px;
+        }
+
+        .error-box {
+            background: #ffebe9;
+            border-left: 4px solid #f02849;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #1c1e21;
+            margin-top: 10px;
+        }
+
+        .success-box {
+            background: #e7f5ed;
+            border-left: 4px solid #42b72a;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #1c1e21;
+            margin-bottom: 15px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f0f2f5;
+            border-top: 4px solid #42b72a;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #1c1e21;
+            font-weight: 600;
+        }
+
+        .loading-subtext {
+            font-size: 14px;
+            color: #65676b;
+            margin-top: 8px;
+        }
+
+        .map-legend {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+            font-size: 13px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            border: 1px solid #dcdcdc;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #65676b;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        .drop-hint {
+            text-align: center;
+            color: #65676b;
+            font-size: 12px;
+            margin-top: 8px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Laster norske postnummerdata...</div>
+        <div class="loading-subtext">Dette kan ta noen sekunder</div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <h1>🗺️ Norge Postnummerkart</h1>
+
+            <div class="info-box">
+                <strong>Slik bruker du kartet:</strong><br>
+                1. Sørg for at postal-codes.json ligger i samme mappe<br>
+                2. Skriv inn postnummer (eller slipp CSV-fil)<br>
+                3. Eller klikk på kartet for å velge områder<br>
+                4. Eksporter til CSV for Meta Ads Manager
+            </div>
+
+            <div class="section">
+                <div class="section-title">Legg til postnummer</div>
+                <div class="textarea-wrapper">
+                    <textarea
+                        id="postalInput"
+                        placeholder="Skriv inn postnummer (komma- eller linjeskilt) eller slipp CSV-fil her&#10;&#10;Eksempel:&#10;0150, 0151, 0152&#10;eller&#10;0150&#10;0151&#10;0152"
+                    ></textarea>
+                    <div class="drop-hint">💡 Tips: Slipp en CSV-fil her for å laste inn postnummer</div>
+                </div>
+                <button class="btn btn-primary" onclick="addPostalCodes()">
+                    ➕ Legg til postnummer
+                </button>
+                <button class="btn btn-secondary" onclick="clearSelection()">
+                    🗑️ Fjern alle
+                </button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Valgte postnummer (<span id="selectedCount">0</span>)</div>
+                <div class="selected-list" id="selectedList">
+                    <div style="text-align: center; color: #65676b; padding: 20px;">
+                        Ingen postnummer valgt ennå
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-export" onclick="exportToCSV()" id="exportBtn" disabled>
+                📥 Eksporter til CSV for Meta Ads
+            </button>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Totalt områder lastet:</span>
+                    <span class="stat-value" id="totalAreas">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Områder markert:</span>
+                    <span class="stat-value" id="markedAreas">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="map-legend">
+                <strong style="display: block; margin-bottom: 10px;">Forklaring</strong>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(66, 183, 42, 0.4); border-color: #42b72a;"></div>
+                    <span>Valgte områder</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(220, 220, 220, 0.4); border-color: #999;"></div>
+                    <span>Ikke valgt</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script>
+        // Global state
+        let map;
+        let geojsonLayer;
+        let geojsonData = null;
+        let selectedPostalCodes = new Set();
+        let postalCodeLayers = new Map();
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([65.0, 13.0], 5);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(map);
+        }
+
+        // Load GeoJSON data automatically
+        async function loadPostalDataAutomatically() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            try {
+                // Try multiple sources in order
+                const sources = [
+                    // Try local file first (if both files are in same folder)
+                    './postal-codes.json',
+                    'postal-codes.json',
+                    // Fallback to online sources
+                    'https://cdn.jsdelivr.net/gh/carestad/norwegian-geodata@main/postal-codes.json',
+                    'https://raw.githack.com/carestad/norwegian-geodata/main/postal-codes.json'
+                ];
+
+                let data = null;
+                let loadedFrom = null;
+
+                for (const url of sources) {
+                    try {
+                        console.log('Trying to load from:', url);
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            data = await response.json();
+                            loadedFrom = url;
+                            console.log('Successfully loaded from:', url);
+                            break;
+                        }
+                    } catch (e) {
+                        console.log('Failed to load from:', url, e);
+                        continue;
+                    }
+                }
+
+                if (!data) {
+                    throw new Error('Kunne ikke laste postnummerdata. Sjekk at postal-codes.json ligger i samme mappe som HTML-filen.');
+                }
+
+                loadGeoJSON(data);
+                loadingOverlay.classList.add('hidden');
+
+            } catch (error) {
+                console.error('Error loading postal data:', error);
+                loadingOverlay.innerHTML = `
+                    <div style="text-align: center; padding: 40px; max-width: 600px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 10px; color: #1c1e21;">
+                            Kunne ikke laste postnummerdata
+                        </div>
+                        <div style="font-size: 14px; color: #65676b; margin-bottom: 20px; line-height: 1.6;">
+                            ${error.message}<br><br>
+                            <strong>Sjekk at:</strong><br>
+                            1. postal-codes.json ligger i samme mappe som denne HTML-filen<br>
+                            2. Du har internettforbindelse (hvis du ikke bruker lokal fil)
+                        </div>
+                        <button onclick="location.reload()" style="padding: 10px 20px; background: #42b72a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Prøv igjen
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Setup drag and drop for textarea
+        function setupDragAndDrop() {
+            const textarea = document.getElementById('postalInput');
+
+            textarea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                textarea.classList.add('dragover');
+            });
+
+            textarea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                textarea.classList.remove('dragover');
+            });
+
+            textarea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                textarea.classList.remove('dragover');
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.name.endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain') {
+                        readCSVFile(file);
+                    } else {
+                        alert('Vennligst slipp en CSV-fil');
+                    }
+                }
+            });
+        }
+
+        // Read CSV file
+        function readCSVFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                document.getElementById('postalInput').value = content;
+            };
+            reader.readAsText(file);
+        }
+
+        // Load GeoJSON data
+        function loadGeoJSON(data) {
+            // Clear existing layer
+            if (geojsonLayer) {
+                map.removeLayer(geojsonLayer);
+            }
+            postalCodeLayers.clear();
+
+            // Store data
+            geojsonData = data;
+
+            // Handle different data structures
+            let features;
+            if (data.type === 'FeatureCollection') {
+                features = data.features;
+            } else if (Array.isArray(data)) {
+                // Convert array to FeatureCollection
+                features = data.map(item => {
+                    if (item.geojson) {
+                        return {
+                            type: 'Feature',
+                            properties: {
+                                postnummer: item.postnummer,
+                                poststed: item.poststed,
+                                kommune: item.kommune,
+                                fylke: item.fylke
+                            },
+                            geometry: typeof item.geojson === 'string' ? JSON.parse(item.geojson) : item.geojson
+                        };
+                    }
+                    return item;
+                }).filter(item => item.geometry);
+
+                data = {
+                    type: 'FeatureCollection',
+                    features: features
+                };
+                geojsonData = data;
+            }
+
+            // Create GeoJSON layer
+            geojsonLayer = L.geoJSON(data, {
+                style: function(feature) {
+                    const postalCode = getPostalCode(feature);
+                    return getFeatureStyle(postalCode);
+                },
+                onEachFeature: function(feature, layer) {
+                    const postalCode = getPostalCode(feature);
+                    const poststed = feature.properties.poststed || feature.properties.name || 'Ukjent';
+
+                    // Store layer reference
+                    if (postalCode) {
+                        postalCodeLayers.set(postalCode, layer);
+                    }
+
+                    // Popup
+                    layer.bindPopup(`
+                        <strong>${postalCode}</strong><br>
+                        ${poststed}
+                    `);
+
+                    // Click handler
+                    layer.on('click', function() {
+                        togglePostalCode(postalCode);
+                    });
+
+                    // Hover effect
+                    layer.on('mouseover', function() {
+                        if (!selectedPostalCodes.has(postalCode)) {
+                            layer.setStyle({
+                                fillOpacity: 0.5,
+                                weight: 2
+                            });
+                        }
+                    });
+
+                    layer.on('mouseout', function() {
+                        if (!selectedPostalCodes.has(postalCode)) {
+                            layer.setStyle(getFeatureStyle(postalCode));
+                        }
+                    });
+                }
+            }).addTo(map);
+
+            // Fit map to bounds
+            if (geojsonLayer.getBounds().isValid()) {
+                map.fitBounds(geojsonLayer.getBounds());
+            }
+
+            // Update stats
+            updateStats();
+        }
+
+        // Get postal code from feature
+        function getPostalCode(feature) {
+            return feature.properties.postnummer ||
+                   feature.properties.postcode ||
+                   feature.properties.postal_code ||
+                   feature.properties.POSTNUMMER ||
+                   '';
+        }
+
+        // Get style for feature
+        function getFeatureStyle(postalCode) {
+            const isSelected = selectedPostalCodes.has(postalCode);
+            return {
+                fillColor: isSelected ? '#42b72a' : '#dcdcdc',
+                weight: isSelected ? 2 : 1,
+                opacity: 1,
+                color: isSelected ? '#42b72a' : '#999',
+                fillOpacity: isSelected ? 0.4 : 0.2
+            };
+        }
+
+        // Toggle postal code selection
+        function togglePostalCode(postalCode) {
+            if (!postalCode) return;
+
+            if (selectedPostalCodes.has(postalCode)) {
+                selectedPostalCodes.delete(postalCode);
+            } else {
+                selectedPostalCodes.add(postalCode);
+            }
+
+            updateLayerStyle(postalCode);
+            updateUI();
+        }
+
+        // Update layer style
+        function updateLayerStyle(postalCode) {
+            const layer = postalCodeLayers.get(postalCode);
+            if (layer) {
+                layer.setStyle(getFeatureStyle(postalCode));
+            }
+        }
+
+        // Add postal codes from textarea
+        function addPostalCodes() {
+            const input = document.getElementById('postalInput').value;
+            if (!input.trim()) {
+                alert('Vennligst skriv inn postnummer');
+                return;
+            }
+
+            if (!geojsonData) {
+                alert('Vennligst vent til postnummerdata er lastet');
+                return;
+            }
+
+            // Parse input (comma, semicolon, or newline separated)
+            const codes = input
+                .split(/[\n,;]+/)
+                .map(code => code.trim())
+                .filter(code => code.length > 0);
+
+            let added = 0;
+            let notFound = [];
+
+            codes.forEach(code => {
+                // Check if postal code exists in data
+                if (postalCodeLayers.has(code)) {
+                    if (!selectedPostalCodes.has(code)) {
+                        selectedPostalCodes.add(code);
+                        updateLayerStyle(code);
+                        added++;
+                    }
+                } else {
+                    notFound.push(code);
+                }
+            });
+
+            // Clear input
+            document.getElementById('postalInput').value = '';
+
+            // Show feedback
+            if (added > 0) {
+                updateUI();
+            }
+
+            if (notFound.length > 0) {
+                const message = notFound.length <= 10
+                    ? `Følgende postnummer ble ikke funnet:\n${notFound.join(', ')}`
+                    : `${notFound.length} postnummer ble ikke funnet i dataene`;
+                alert(message);
+            }
+        }
+
+        // Clear selection
+        function clearSelection() {
+            if (selectedPostalCodes.size === 0) return;
+
+            if (confirm('Er du sikker på at du vil fjerne alle valgte postnummer?')) {
+                selectedPostalCodes.forEach(code => {
+                    updateLayerStyle(code);
+                });
+                selectedPostalCodes.clear();
+                updateUI();
+            }
+        }
+
+        // Remove single postal code
+        function removePostalCode(code) {
+            selectedPostalCodes.delete(code);
+            updateLayerStyle(code);
+            updateUI();
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            if (selectedPostalCodes.size === 0) {
+                alert('Ingen postnummer å eksportere');
+                return;
+            }
+
+            // Create CSV content (Meta Ads format)
+            const csvContent = Array.from(selectedPostalCodes)
+                .sort()
+                .join('\n');
+
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            const date = new Date().toISOString().split('T')[0];
+            link.setAttribute('href', url);
+            link.setAttribute('download', `postnummer_meta_ads_${date}.csv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Update UI
+        function updateUI() {
+            const selectedArray = Array.from(selectedPostalCodes).sort();
+            const listContainer = document.getElementById('selectedList');
+
+            if (selectedArray.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; color: #65676b; padding: 20px;">
+                        Ingen postnummer valgt ennå
+                    </div>
+                `;
+            } else {
+                listContainer.innerHTML = selectedArray.map(code => {
+                    const poststed = getPoststadForCode(code);
+                    return `
+                        <div class="selected-item">
+                            <span><strong>${code}</strong> ${poststed ? '- ' + poststed : ''}</span>
+                            <button class="remove-btn" onclick="removePostalCode('${code}')" title="Fjern">
+                                ×
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('selectedCount').textContent = selectedArray.length;
+            document.getElementById('markedAreas').textContent = selectedArray.length;
+            document.getElementById('exportBtn').disabled = selectedArray.length === 0;
+        }
+
+        // Get poststad for postal code
+        function getPoststadForCode(code) {
+            if (!geojsonData) return '';
+
+            const features = geojsonData.features || geojsonData;
+            const feature = features.find(f => getPostalCode(f) === code);
+            return feature ? (feature.properties.poststed || feature.properties.name || '') : '';
+        }
+
+        // Update stats
+        function updateStats() {
+            const totalAreas = geojsonData ?
+                (geojsonData.features ? geojsonData.features.length : geojsonData.length) : 0;
+
+            document.getElementById('totalAreas').textContent = totalAreas;
+            document.getElementById('markedAreas').textContent = selectedPostalCodes.size;
+        }
+
+        // Initialize on load
+        initMap();
+        setupDragAndDrop();
+        updateUI();
+        updateStats();
+
+        // Load postal data automatically
+        loadPostalDataAutomatically();
+    </script>
+</body>
+</html>

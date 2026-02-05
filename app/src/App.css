@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --ink-900: #0d1a26;
+  --ink-700: #233244;
+  --ink-500: #3d4b5d;
+  --sand-100: #f1f4f6;
+  --sand-200: #e3e8ee;
+  --glow-400: #ffb347;
+  --sidebar-width: 320px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  color: var(--ink-900);
+  background: radial-gradient(circle at top left, #ffffff 0%, #eef3f7 55%, #e5ebf2 100%);
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  padding: 2rem 1.5rem;
+  background: linear-gradient(160deg, #f8fafc 0%, #eef2f6 100%);
+  border-right: 1px solid var(--sand-200);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sidebar-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+}
+
+.sidebar-header p {
+  margin: 0;
+  color: var(--ink-500);
+  font-size: 0.95rem;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--sand-200);
+  box-shadow: 0 10px 24px rgba(15, 23, 36, 0.05);
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--ink-500);
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+
+.status {
+  font-size: 0.85rem;
+  color: var(--ink-500);
+}
+
+.status-error {
+  color: #b84b4b;
+}
+
+.helper-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-500);
+  background: #ffffff;
+  border: 1px dashed var(--sand-200);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+}
+
+.section-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-700);
+}
+
+.postal-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 110px;
+  border-radius: 12px;
+  border: 1px solid var(--sand-200);
+  padding: 0.75rem 0.85rem;
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  font-size: 0.9rem;
+  background: #ffffff;
+  color: var(--ink-900);
+}
+
+.file-input {
+  font-size: 0.85rem;
+}
+
+.primary-button,
+.secondary-button {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  padding: 0.7rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primary-button {
+  background: #0f2a44;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 42, 68, 0.2);
+}
+
+.primary-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.secondary-button {
+  background: #ffffff;
+  color: var(--ink-700);
+  border: 1px solid var(--sand-200);
+}
+
+.actions {
+  flex-direction: row;
+  gap: 0.75rem;
+}
+
+.summary-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid var(--sand-200);
+  padding: 0.85rem 1rem;
+  box-shadow: 0 12px 24px rgba(15, 23, 36, 0.05);
+}
+
+.summary-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-700);
+  margin-bottom: 0.6rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--ink-500);
+  margin-bottom: 0.35rem;
+}
+
+.summary-row strong {
+  color: var(--ink-700);
+}
+
+.map-panel {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.map-container {
+  position: absolute;
+  inset: 0;
+}
+
+.maplibregl-ctrl-top-right {
+  margin-right: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--sand-200);
+  }
+
+  .map-panel {
+    min-height: 70vh;
+  }
+}
