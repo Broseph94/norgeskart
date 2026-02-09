@@ -1,3 +1,6 @@
 app/public/postal-codes.json
 app/public/postal-codes.json
 postal-codes.json
+
+.DS_Store
+app/scripts/norway-land-osm*.geojson

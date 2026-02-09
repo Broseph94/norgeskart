@@ -8,6 +8,7 @@ import Papa from 'papaparse'
 import { saveAs } from 'file-saver'
 
 type PostalGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Geometry, { postnummer?: string }>
+type PostalLabelGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Point, { postnummer?: string }>
 
 type ImportSummary = {
   source: 'text' | 'csv'
@@ -20,10 +21,22 @@ type CoopGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Point, {
   name?: string
   brand?: string
   address?: string
+  chain?: string
+  samvirkelag?: string
 }>
 
-const MAP_STYLE_URL = 'https://demotiles.maplibre.org/style.json'
+const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty'
 const NORWAY_CENTER: [number, number] = [10.7522, 59.9139]
+const CHAIN_OPTIONS = [
+  { id: 'prix', label: 'Coop Prix', color: '#f9da47' },
+  { id: 'extra', label: 'Coop Extra', color: '#eb1907' },
+  { id: 'mega', label: 'Coop Mega', color: '#164734' },
+  { id: 'obs', label: 'Obs', color: '#03376a' },
+  { id: 'obsbygg', label: 'Obs Bygg', color: '#ff4d00' },
+]
+
+const getChainLabel = (chainId: string) =>
+  CHAIN_OPTIONS.find((option) => option.id === chainId)?.label || chainId
 
 const CITY_LABELS: GeoJSON.FeatureCollection<GeoJSON.Point, { name: string }> = {
   type: 'FeatureCollection',
@@ -61,8 +74,11 @@ const CITY_LABELS: GeoJSON.FeatureCollection<GeoJSON.Point, { name: string }> = 
   ],
 }
 
+
 async function loadPostalGeoJSON(): Promise<PostalGeoJSON> {
   const candidates = [
+    '/postal-codes.dissolved.geojson.gz',
+    '/postal-codes.dissolved.geojson',
     '/postal-codes.clipped.geojson.gz',
     '/postal-codes.clipped.geojson',
     '/postal-codes.geojson.gz',
@@ -90,10 +106,37 @@ async function loadPostalGeoJSON(): Promise<PostalGeoJSON> {
   throw new Error('Unable to load postal GeoJSON data')
 }
 
-async function loadCoopPrixGeoJSON(): Promise<CoopGeoJSON> {
-  const response = await fetch('/coop_prix.geojson')
+async function loadPostalLabelGeoJSON(): Promise<PostalLabelGeoJSON> {
+  const candidates = [
+    '/postal-codes.labels.geojson.gz',
+    '/postal-codes.labels.geojson',
+  ]
+
+  for (const url of candidates) {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) continue
+
+      if (url.endsWith('.gz')) {
+        const buffer = await response.arrayBuffer()
+        const decompressed = gunzipSync(new Uint8Array(buffer))
+        const text = new TextDecoder().decode(decompressed)
+        return JSON.parse(text) as PostalLabelGeoJSON
+      }
+
+      return (await response.json()) as PostalLabelGeoJSON
+    } catch (error) {
+      continue
+    }
+  }
+
+  throw new Error('Unable to load postal label data')
+}
+
+async function loadCoopStoresGeoJSON(): Promise<CoopGeoJSON> {
+  const response = await fetch('/coop_stores.geojson')
   if (!response.ok) {
-    throw new Error(`Coop Prix data request failed (${response.status})`)
+    throw new Error(`Coop stores data request failed (${response.status})`)
   }
   return (await response.json()) as CoopGeoJSON
 }
@@ -112,8 +155,27 @@ function App() {
 
   const [postalInput, setPostalInput] = useState('')
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
+  const [activeChains, setActiveChains] = useState<Record<string, boolean>>(() => ({
+    prix: true,
+    extra: true,
+    mega: true,
+    obs: true,
+    obsbygg: true,
+  }))
+  const [samvirkelagOptions, setSamvirkelagOptions] = useState<string[]>([])
+  const [selectedSamvirkelag, setSelectedSamvirkelag] = useState('Alle')
+  const [storeSearch, setStoreSearch] = useState('')
+  const [samvirkelagSearch, setSamvirkelagSearch] = useState('')
+  const coopStoresRef = useRef<CoopGeoJSON | null>(null)
 
   const highlightedCount = useMemo(() => highlightedPostalcodes.size, [highlightedPostalcodes])
+
+  const handleChainToggle = (chainId: string) => {
+    setActiveChains((prev) => ({
+      ...prev,
+      [chainId]: !prev[chainId],
+    }))
+  }
 
   const mergePostalCodes = (rawValues: string[], source: ImportSummary['source'], totalRows = 0) => {
     const validSet = validPostnummerSetRef.current
@@ -261,6 +323,18 @@ function App() {
       setIsLoadingCoop(true)
       setCoopLoadError(null)
 
+      const getWaterLayerId = () => {
+        const layers = map.getStyle().layers ?? []
+        const waterLayer = layers.find((layer) => {
+          if (layer.type !== 'fill') return false
+          const id = layer.id.toLowerCase()
+          return id.includes('water') || id.includes('ocean') || id.includes('sea')
+        })
+        return waterLayer?.id
+      }
+
+      const waterLayerId = getWaterLayerId()
+
       try {
         if (!map.getSource('cityLabels')) {
           map.addSource('cityLabels', {
@@ -287,10 +361,16 @@ function App() {
               'text-halo-width': 1,
               'text-halo-blur': 0.6,
             },
-          })
+          }, waterLayerId)
         }
 
         const data = await loadPostalGeoJSON()
+        let labelData: PostalLabelGeoJSON | null = null
+        try {
+          labelData = await loadPostalLabelGeoJSON()
+        } catch (error) {
+          labelData = null
+        }
 
         const validSet = new Set<string>()
         for (const feature of data.features ?? []) {
@@ -309,6 +389,13 @@ function App() {
           })
         }
 
+        if (!map.getSource('postalLabels') && labelData) {
+          map.addSource('postalLabels', {
+            type: 'geojson',
+            data: labelData,
+          })
+        }
+
         if (!map.getLayer('postal-fill')) {
           map.addLayer({
             id: 'postal-fill',
@@ -318,7 +405,7 @@ function App() {
               'fill-color': '#8897a8',
               'fill-opacity': 0.25,
             },
-          })
+          }, waterLayerId)
         }
 
         if (!map.getLayer('postal-outline')) {
@@ -331,7 +418,7 @@ function App() {
               'line-width': 0.6,
               'line-opacity': 0.7,
             },
-          })
+          }, waterLayerId)
         }
 
         if (!map.getLayer('postal-highlight')) {
@@ -344,28 +431,61 @@ function App() {
               'fill-opacity': 0.55,
             },
             filter: ['in', ['get', 'postnummer'], ['literal', []]],
-          })
+          }, waterLayerId)
         }
 
         if (!map.getLayer('postal-labels')) {
           map.addLayer({
             id: 'postal-labels',
             type: 'symbol',
-            source: 'postalCodes',
-            minzoom: 8,
+            source: labelData ? 'postalLabels' : 'postalCodes',
+            minzoom: 6,
             layout: {
               'text-field': ['get', 'postnummer'],
-              'text-size': 11,
+              'text-size': ['interpolate', ['linear'], ['zoom'], 6, 9, 9, 10, 12, 11],
               'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
               'text-allow-overlap': false,
+              'text-ignore-placement': false,
+              'text-optional': true,
+              'text-padding': 6,
             },
             paint: {
               'text-color': '#111827',
-              'text-halo-color': '#f8fafc',
-              'text-halo-width': 1,
-              'text-halo-blur': 0.6,
+              'text-halo-color': '#ffffff',
+              'text-halo-width': 2,
+              'text-halo-blur': 1,
             },
           })
+        }
+
+        if (!map.getLayer('postal-labels-dense')) {
+          map.addLayer({
+            id: 'postal-labels-dense',
+            type: 'symbol',
+            source: labelData ? 'postalLabels' : 'postalCodes',
+            minzoom: 12,
+            layout: {
+              'text-field': ['get', 'postnummer'],
+              'text-size': ['interpolate', ['linear'], ['zoom'], 12, 11, 16, 14],
+              'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+              'text-allow-overlap': true,
+              'text-ignore-placement': true,
+              'text-padding': 2,
+            },
+            paint: {
+              'text-color': '#111827',
+              'text-halo-color': '#ffffff',
+              'text-halo-width': 2,
+              'text-halo-blur': 1,
+            },
+          })
+        }
+
+        if (map.getLayer('postal-labels')) {
+          map.moveLayer('postal-labels')
+        }
+        if (map.getLayer('postal-labels-dense')) {
+          map.moveLayer('postal-labels-dense')
         }
 
         map.on('mouseenter', 'postal-fill', () => {
@@ -399,7 +519,8 @@ function App() {
       }
 
       try {
-        const coopData = await loadCoopPrixGeoJSON()
+        const coopData = await loadCoopStoresGeoJSON()
+        coopStoresRef.current = coopData
         if (!map.getSource('coopPrixStores')) {
           map.addSource('coopPrixStores', {
             type: 'geojson',
@@ -413,7 +534,21 @@ function App() {
             type: 'circle',
             source: 'coopPrixStores',
             paint: {
-              'circle-color': '#2563eb',
+              'circle-color': [
+                'match',
+                ['get', 'chain'],
+                'prix',
+                CHAIN_OPTIONS[0].color,
+                'extra',
+                CHAIN_OPTIONS[1].color,
+                'mega',
+                CHAIN_OPTIONS[2].color,
+                'obs',
+                CHAIN_OPTIONS[3].color,
+                'obsbygg',
+                CHAIN_OPTIONS[4].color,
+                '#2563eb',
+              ],
               'circle-radius': 5,
               'circle-stroke-color': '#ffffff',
               'circle-stroke-width': 1,
@@ -435,19 +570,31 @@ function App() {
           const props = feature?.properties || {}
           const name = props.name ? String(props.name) : 'Coop Prix'
           const address = props.address ? String(props.address) : ''
+          const chain = props.chain ? String(props.chain) : ''
+          const chainLabel = chain ? getChainLabel(chain) : ''
+          const samvirkelag = props.samvirkelag ? String(props.samvirkelag) : ''
           const coordinates = (feature?.geometry as GeoJSON.Point | undefined)?.coordinates
           if (!coordinates) return
 
           const content = `
             <div style="font-family: 'Space Grotesk', sans-serif;">
               <strong>${name}</strong><br />
-              ${address}
+              ${address ? `<div>Adresse: ${address}</div>` : ''}
+              ${chainLabel ? `<div>Kjede: ${chainLabel}</div>` : ''}
+              ${samvirkelag ? `<div>Samvirkelag: ${samvirkelag}</div>` : ''}
             </div>
           `
           popup.setLngLat(coordinates as [number, number]).setHTML(content).addTo(map)
         })
+
+        const samvirkelagSet = new Set<string>()
+        coopData.features.forEach((feature) => {
+          const value = feature.properties?.samvirkelag
+          if (value) samvirkelagSet.add(value)
+        })
+        setSamvirkelagOptions(Array.from(samvirkelagSet).sort())
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error loading Coop Prix data'
+        const message = error instanceof Error ? error.message : 'Ukjent feil ved lasting av butikker'
         setCoopLoadError(message)
       } finally {
         setIsLoadingCoop(false)
@@ -469,36 +616,224 @@ function App() {
     map.setFilter('postal-highlight', ['in', ['get', 'postnummer'], ['literal', values]])
   }, [highlightedPostalcodes])
 
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !map.getLayer('coop-pins')) return
+
+    const baseData = coopStoresRef.current
+    if (!baseData) return
+
+    const enabledChains = CHAIN_OPTIONS.filter((option) => activeChains[option.id]).map(
+      (option) => option.id,
+    )
+    const searchLower = storeSearch.trim().toLowerCase()
+
+    const filtered = baseData.features.filter((feature) => {
+      const props = feature.properties || {}
+      const chain = props.chain || ''
+      const samvirkelag = props.samvirkelag || ''
+      const name = props.name || ''
+      const address = props.address || ''
+
+    if (enabledChains.length === 0) return false
+    if (!enabledChains.includes(chain)) return false
+      if (selectedSamvirkelag !== 'Alle' && samvirkelag !== selectedSamvirkelag) return false
+      if (searchLower) {
+        const haystack = `${name} ${address}`.toLowerCase()
+        if (!haystack.includes(searchLower)) return false
+      }
+      return true
+    })
+
+    const source = map.getSource('coopPrixStores')
+    if (source && 'setData' in source) {
+      source.setData({ type: 'FeatureCollection', features: filtered })
+    }
+  }, [activeChains, selectedSamvirkelag, storeSearch])
+
+  const filteredSamvirkelagOptions = useMemo(() => {
+    const query = samvirkelagSearch.trim().toLowerCase()
+    if (!query) return samvirkelagOptions
+    return samvirkelagOptions.filter((option) => option.toLowerCase().includes(query))
+  }, [samvirkelagOptions, samvirkelagSearch])
+
+  const samvirkelagSuggestions = useMemo(() => {
+    const query = samvirkelagSearch.trim().toLowerCase()
+    if (!query) return []
+    return filteredSamvirkelagOptions.slice(0, 8)
+  }, [filteredSamvirkelagOptions, samvirkelagSearch])
+
+  const storeSuggestions = useMemo(() => {
+    const baseData = coopStoresRef.current
+    const query = storeSearch.trim().toLowerCase()
+    if (!baseData || !query) return []
+
+    const enabledChains = CHAIN_OPTIONS.filter((option) => activeChains[option.id]).map(
+      (option) => option.id,
+    )
+
+    const matches = baseData.features.filter((feature) => {
+      const props = feature.properties || {}
+      const chain = props.chain || ''
+      const samvirkelag = props.samvirkelag || ''
+      const name = props.name || ''
+      const address = props.address || ''
+      if (enabledChains.length && !enabledChains.includes(chain)) return false
+      if (selectedSamvirkelag !== 'Alle' && samvirkelag !== selectedSamvirkelag) return false
+      const haystack = `${name} ${address} ${samvirkelag}`.toLowerCase()
+      return haystack.includes(query)
+    })
+
+    return matches.slice(0, 8)
+  }, [activeChains, selectedSamvirkelag, storeSearch])
+
+  const handleSelectStore = (feature: CoopGeoJSON['features'][number]) => {
+    const map = mapRef.current
+    if (!map || feature.geometry.type !== 'Point') return
+    const coords = feature.geometry.coordinates as [number, number]
+    const props = feature.properties || {}
+    const name = props.name ? String(props.name) : 'Butikk'
+    const address = props.address ? String(props.address) : ''
+    const chain = props.chain ? String(props.chain) : ''
+    const samvirkelag = props.samvirkelag ? String(props.samvirkelag) : ''
+
+    map.flyTo({ center: coords, zoom: 14, speed: 1.2 })
+    new maplibregl.Popup({ closeButton: true, closeOnClick: true })
+      .setLngLat(coords)
+      .setHTML(
+        `<div><strong>${name}</strong></div>` +
+          (address ? `<div>${address}</div>` : '') +
+          (chain ? `<div>Kjede: ${getChainLabel(chain)}</div>` : '') +
+          (samvirkelag ? `<div>Samvirkelag: ${samvirkelag}</div>` : ''),
+      )
+      .addTo(map)
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-header">
           <h1>Norgeskart</h1>
-          <p>Interactive postal zone explorer</p>
+          <p>Interaktivt postkodekart</p>
         </div>
 
         <div className="sidebar-section">
           <div className="stat">
-            <span className="stat-label">Highlighted zones</span>
+            <span className="stat-label">Valgte soner</span>
             <span className="stat-value">{highlightedCount}</span>
           </div>
           <div className="status">
-            {isLoadingPostal && <span>Loading postal zones...</span>}
-            {!isLoadingPostal && !postalLoadError && (
-              <span>{validPostnummerSetRef.current.size} postalcodes loaded</span>
-            )}
+            {isLoadingPostal && <span>Laster postsoner...</span>}
             {postalLoadError && <span className="status-error">{postalLoadError}</span>}
           </div>
           <div className="status">
-            {isLoadingCoop && <span>Loading Coop Prix stores...</span>}
-            {!isLoadingCoop && !coopLoadError && <span>Coop Prix stores loaded</span>}
+            {isLoadingCoop && <span>Laster butikker...</span>}
             {coopLoadError && <span className="status-error">{coopLoadError}</span>}
           </div>
         </div>
 
         <div className="sidebar-section">
+          <div className="section-label">Butikker</div>
+          <div className="toggle-list">
+            {CHAIN_OPTIONS.map((option) => (
+              <label key={option.id} className="toggle-item">
+                <input
+                  type="checkbox"
+                  checked={activeChains[option.id]}
+                  onChange={() => handleChainToggle(option.id)}
+                />
+                <span className="toggle-swatch" style={{ backgroundColor: option.color }} />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+          <label className="section-label" htmlFor="store-search">
+            Søk i butikker
+          </label>
+          <div className="search-wrapper">
+            <input
+              id="store-search"
+              className="select-input"
+              type="text"
+              value={storeSearch}
+              onChange={(event) => setStoreSearch(event.target.value)}
+              placeholder="Søk på butikknavn eller adresse"
+            />
+            {storeSearch.trim() && (
+              <div className="search-suggestions">
+                {storeSuggestions.length === 0 && (
+                  <div className="search-empty">Ingen treff.</div>
+                )}
+                {storeSuggestions.map((feature) => {
+                  const props = feature.properties || {}
+                  const name = props.name ? String(props.name) : 'Butikk'
+                  const samvirkelag = props.samvirkelag ? String(props.samvirkelag) : ''
+                  const address = props.address ? String(props.address) : ''
+                  const key = `${name}-${address}-${samvirkelag}`
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      className="search-card"
+                      onClick={() => handleSelectStore(feature)}
+                    >
+                      <div className="search-card-title">{name}</div>
+                      {samvirkelag && <div className="search-card-sub">Samvirkelag: {samvirkelag}</div>}
+                      {address && <div className="search-card-sub">{address}</div>}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+          <label className="section-label" htmlFor="samvirkelag-select">
+            Samvirkelagtilhørighet
+          </label>
+          <div className="search-wrapper">
+            <input
+              id="samvirkelag-search"
+              className="select-input"
+              type="text"
+              value={samvirkelagSearch}
+              onChange={(event) => setSamvirkelagSearch(event.target.value)}
+              placeholder="Søk samvirkelag"
+            />
+            {samvirkelagSearch.trim() && (
+              <div className="search-suggestions">
+                {samvirkelagSuggestions.length === 0 && (
+                  <div className="search-empty">Ingen treff.</div>
+                )}
+                {samvirkelagSuggestions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className="search-card"
+                    onClick={() => setSelectedSamvirkelag(option)}
+                  >
+                    <div className="search-card-title">{option}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <select
+            id="samvirkelag-select"
+            className="select-input"
+            value={selectedSamvirkelag}
+            onChange={(event) => setSelectedSamvirkelag(event.target.value)}
+          >
+            <option value="Alle">Alle</option>
+            {filteredSamvirkelagOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="sidebar-section">
           <label className="section-label" htmlFor="postal-input">
-            Add postalcodes
+            Legg til postkoder
           </label>
           <textarea
             id="postal-input"
@@ -506,19 +841,19 @@ function App() {
             rows={4}
             value={postalInput}
             onChange={(event) => setPostalInput(event.target.value)}
-            placeholder="Example: 0150, 0151, 0152"
+            placeholder="Eksempel: 0150, 0151, 0152"
           />
           <div className="helper-text">
-            You can paste comma- or line-separated 4-digit postalcodes.
+            Du kan legge til komma eller linjeseparerte postkoder med 4 siffer.
           </div>
           <button className="primary-button" type="button" onClick={handleApplyPostalInput}>
-            Apply
+            Legg til
           </button>
         </div>
 
         <div className="sidebar-section">
           <label className="section-label" htmlFor="csv-input">
-            Import CSV
+            Importer CSV-fil
           </label>
           <input
             id="csv-input"
@@ -529,7 +864,7 @@ function App() {
             className="file-input"
           />
           <div className="helper-text">
-            We look for columns named postnummer, postal_code, postcode, or zip.
+            Vi ser etter kolonner som heter postnummer, postal_code, postcode eller zip.
           </div>
         </div>
 
@@ -537,18 +872,18 @@ function App() {
           <div className="sidebar-section">
             <div className="summary-card">
               <div className="summary-title">
-                {importSummary.source === 'text' ? 'Text input summary' : 'CSV import summary'}
+                {importSummary.source === 'text' ? 'Oppsummering (tekst)' : 'Oppsummering (CSV)'}
               </div>
               <div className="summary-row">
-                <span>Added</span>
+                <span>Lagt til</span>
                 <strong>{importSummary.added}</strong>
               </div>
               <div className="summary-row">
-                <span>Invalid</span>
+                <span>Ugyldige</span>
                 <strong>{importSummary.invalid}</strong>
               </div>
               <div className="summary-row">
-                <span>Total rows</span>
+                <span>Totalt</span>
                 <strong>{importSummary.total}</strong>
               </div>
             </div>
@@ -557,7 +892,7 @@ function App() {
 
         <div className="sidebar-section actions">
           <button className="secondary-button" type="button" onClick={handleClear}>
-            Clear
+            Reset
           </button>
           <button
             className="primary-button"
@@ -565,13 +900,13 @@ function App() {
             onClick={handleDownload}
             disabled={!highlightedPostalcodes.size}
           >
-            Download CSV
+            Last ned CSV
           </button>
         </div>
 
         <div className="sidebar-section">
           <p className="helper-text">
-            Click a postal zone on the map to toggle highlighting.
+            Klikk på en postsone i kartet for å markere den.
           </p>
         </div>
       </aside>

@@ -184,6 +184,93 @@ body {
   color: var(--ink-700);
 }
 
+.toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid var(--sand-200);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+}
+
+.toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--ink-700);
+}
+
+.toggle-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.select-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--sand-200);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  background: #ffffff;
+  color: var(--ink-900);
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+.search-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 5;
+  border: 1px solid var(--sand-200);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.search-card {
+  text-align: left;
+  border: 1px solid var(--sand-200);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-card:hover {
+  background: #eef2f7;
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.search-card-title {
+  font-weight: 600;
+  color: var(--ink-900);
+  margin-bottom: 4px;
+}
+
+.search-card-sub {
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.3;
+}
+
+.search-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #64748b;
+}
+
 .map-panel {
   flex: 1;
   min-width: 0;
