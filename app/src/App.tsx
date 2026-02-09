@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import maplibregl, { type Map as MapLibreMap } from 'maplibre-gl'
+import maplibregl, { type GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
 import { normalizePostnummer } from './utils/postnummer'
@@ -647,7 +647,7 @@ function App() {
 
     const source = map.getSource('coopPrixStores')
     if (source && 'setData' in source) {
-      source.setData({ type: 'FeatureCollection', features: filtered })
+      ;(source as GeoJSONSource).setData({ type: 'FeatureCollection', features: filtered })
     }
   }, [activeChains, selectedSamvirkelag, storeSearch])
 
