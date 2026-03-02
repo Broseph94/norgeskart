@@ -1,0 +1,3025 @@
+{
+  "source": "NBAS_Butikkoversikt_med_adresse (1).xlsx",
+  "records": [
+    {
+      "name_raw": "EXTRA ABC",
+      "name_canonical": "extra abc",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "JERNBANEGT. 1",
+      "address_canonical": "jernbanegate 1",
+      "zip": "7800",
+      "city_raw": "NAMSOS"
+    },
+    {
+      "name_raw": "EXTRA ALGARHEIMVEIE",
+      "name_canonical": "extra algarheimveie",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ALGARHEIMSVN. 77",
+      "address_canonical": "algarheimsveien 77",
+      "zip": "2056",
+      "city_raw": "JESSHEIM"
+    },
+    {
+      "name_raw": "EXTRA ALVIM",
+      "name_canonical": "extra alvim",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "UTSIKTSVEIEN 5",
+      "address_canonical": "utsiktsveien 5",
+      "zip": "1725",
+      "city_raw": "SARPSBORG"
+    },
+    {
+      "name_raw": "EXTRA ASKERHOLME",
+      "name_canonical": "extra askerholme",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GML. DRAMMENSV. 227",
+      "address_canonical": "gml drammensv 227",
+      "zip": "1383",
+      "city_raw": "ASKER"
+    },
+    {
+      "name_raw": "EXTRA ASKIMTORGET",
+      "name_canonical": "extra askimtorget",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "RÅDHUSGATA 8B",
+      "address_canonical": "radhusgata 8b",
+      "zip": "1830",
+      "city_raw": "ASKIM"
+    },
+    {
+      "name_raw": "EXTRA ASKØY",
+      "name_canonical": "extra askøy",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ASKØY SENTER",
+      "address_canonical": "askøy senter",
+      "zip": "5300",
+      "city_raw": "KLEPPESTØ"
+    },
+    {
+      "name_raw": "EXTRA AULI SENTER",
+      "name_canonical": "extra auli senter",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "AULI FORRETNINGSSENTER",
+      "address_canonical": "auli forretningssenter",
+      "zip": "1929",
+      "city_raw": "AULI"
+    },
+    {
+      "name_raw": "EXTRA AUSTAD",
+      "name_canonical": "extra austad",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "AUSTADVEIEN 1",
+      "address_canonical": "austadveien 1",
+      "zip": "3043",
+      "city_raw": "DRAMMEN"
+    },
+    {
+      "name_raw": "EXTRA AUSTRÅTT",
+      "name_canonical": "extra austratt",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KYRKJEVEIEN 158",
+      "address_canonical": "kyrkjeveien 158",
+      "zip": "4325",
+      "city_raw": "SANDNES"
+    },
+    {
+      "name_raw": "EXTRA BEITOSTØLE",
+      "name_canonical": "extra beitostøle",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "BYGDINVEGEN 3764 STØLSTUNET",
+      "address_canonical": "bygdinvegen 3764 stølstunet",
+      "zip": "2953",
+      "city_raw": "BEITOSTØLEN"
+    },
+    {
+      "name_raw": "EXTRA BEKKAJORDET",
+      "name_canonical": "extra bekkajordet",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GAMLEVEIEN 55",
+      "address_canonical": "gamleveien 55",
+      "zip": "3189",
+      "city_raw": "HORTEN"
+    },
+    {
+      "name_raw": "EXTRA BEKKESTUA",
+      "name_canonical": "extra bekkestua",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GAMLE RINGERIKSVEI 35",
+      "address_canonical": "gamle ringeriksvei 35",
+      "zip": "1357",
+      "city_raw": "BEKKESTUA"
+    },
+    {
+      "name_raw": "EXTRA BERGEN STORSENTER",
+      "name_canonical": "extra bergen storsenter",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STRØMGATEN 3",
+      "address_canonical": "strømgaten 3",
+      "zip": "5015",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA BIRKELUNDE",
+      "name_canonical": "extra birkelunde",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "THV. MEYERSGT. 35-41",
+      "address_canonical": "thv meyersgate 35 41",
+      "zip": "0555",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA BISLETT",
+      "name_canonical": "extra bislett",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "PILESTREDET 73",
+      "address_canonical": "pilestredet 73",
+      "zip": "0354",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA BJØLSE",
+      "name_canonical": "extra bjølse",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HAMMERGT. 1",
+      "address_canonical": "hammergate 1",
+      "zip": "0465",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA BJØRNDAL",
+      "name_canonical": "extra bjørndal",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GRANBERGSTUBBEN 24",
+      "address_canonical": "granbergstubben 24",
+      "zip": "1275",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA BOGSTADVEIE",
+      "name_canonical": "extra bogstadveie",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "BOGSTADVEIEN 40-42",
+      "address_canonical": "bogstadveien 40 42",
+      "zip": "0366",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA BORGE",
+      "name_canonical": "extra borge",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "BORGENVEIEN 120",
+      "address_canonical": "borgenveien 120",
+      "zip": "1388",
+      "city_raw": "BORGEN"
+    },
+    {
+      "name_raw": "EXTRA BORGGATA",
+      "name_canonical": "extra borggata",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ÅKEBERGVEIEN 12",
+      "address_canonical": "akebergveien 12",
+      "zip": "0650",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA BORGÅSE",
+      "name_canonical": "extra borgase",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "BUERVEIEN 14",
+      "address_canonical": "buerveien 14",
+      "zip": "3711",
+      "city_raw": "SKIEN"
+    },
+    {
+      "name_raw": "EXTRA BRAVEIE",
+      "name_canonical": "extra braveie",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "BRAVEIEN 55",
+      "address_canonical": "braveien 55",
+      "zip": "1782",
+      "city_raw": "HALDEN"
+    },
+    {
+      "name_raw": "EXTRA BREMNES",
+      "name_canonical": "extra bremnes",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HOLLUNDSDALEN",
+      "address_canonical": "hollundsdalen",
+      "zip": "5430",
+      "city_raw": "BREMNES"
+    },
+    {
+      "name_raw": "EXTRA BRUGATA",
+      "name_canonical": "extra brugata",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "BRUGATA 2",
+      "address_canonical": "brugata 2",
+      "zip": "3825",
+      "city_raw": "LUNDE"
+    },
+    {
+      "name_raw": "EXTRA BRUMUNDDAL",
+      "name_canonical": "extra brumunddal",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FURNESVEIEN 56",
+      "address_canonical": "furnesveien 56",
+      "zip": "2380",
+      "city_raw": "BRUMUNDDAL"
+    },
+    {
+      "name_raw": "EXTRA BRYGGE",
+      "name_canonical": "extra brygge",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STRANDGT. 52-62",
+      "address_canonical": "strandgate 52 62",
+      "zip": "9600",
+      "city_raw": "HAMMERFEST"
+    },
+    {
+      "name_raw": "EXTRA BYHAVE",
+      "name_canonical": "extra byhave",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SCHULTZGT. 14-16",
+      "address_canonical": "schultzgate 14 16",
+      "zip": "3044",
+      "city_raw": "DRAMMEN"
+    },
+    {
+      "name_raw": "EXTRA BÅTSFJORD",
+      "name_canonical": "extra batsfjord",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HAVNEGT. 2-8",
+      "address_canonical": "havnegate 2 8",
+      "zip": "9990",
+      "city_raw": "BÅTSFJORD"
+    },
+    {
+      "name_raw": "EXTRA BØ",
+      "name_canonical": "extra bø",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FOLKESTADVEGEN 1",
+      "address_canonical": "folkestadvegen 1",
+      "zip": "3800",
+      "city_raw": "BØ I TELEMARK"
+    },
+    {
+      "name_raw": "EXTRA BØRSTAD",
+      "name_canonical": "extra børstad",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "RINGGT.125-127",
+      "address_canonical": "ringgate125 127",
+      "zip": "2318",
+      "city_raw": "HAMAR"
+    },
+    {
+      "name_raw": "EXTRA CHRISTIANSLUND",
+      "name_canonical": "extra christianslund",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "CHRISTIANSLUND ALLÈ 4",
+      "address_canonical": "christianslund alle 4",
+      "zip": "1613",
+      "city_raw": "FREDRIKSTAD"
+    },
+    {
+      "name_raw": "EXTRA DAMPE",
+      "name_canonical": "extra dampe",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STRØMSBUVEIEN 61",
+      "address_canonical": "strømsbuveien 61",
+      "zip": "4836",
+      "city_raw": "ARENDAL"
+    },
+    {
+      "name_raw": "EXTRA DAMSGÅRD",
+      "name_canonical": "extra damsgard",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "DAMSGÅRDSVEIEN 205",
+      "address_canonical": "damsgardsveien 205",
+      "zip": "5160",
+      "city_raw": "LAKSEVÅG"
+    },
+    {
+      "name_raw": "EXTRA DIVIGÅRDEN ÅKRA",
+      "name_canonical": "extra divigarden akra",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VESTRE KARMØYVEG 321",
+      "address_canonical": "vestre karmøyveg 321",
+      "zip": "4270",
+      "city_raw": "ÅKRAHAMN"
+    },
+    {
+      "name_raw": "EXTRA DRENGSRUD",
+      "name_canonical": "extra drengsrud",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "DRAMMENSVEIEN 896",
+      "address_canonical": "drammensveien 896",
+      "zip": "1383",
+      "city_raw": "ASKER"
+    },
+    {
+      "name_raw": "EXTRA EIGANES",
+      "name_canonical": "extra eiganes",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ØVRE STOKKAVEI 42",
+      "address_canonical": "øvre stokkavei 42",
+      "zip": "4023",
+      "city_raw": "STAVANGER"
+    },
+    {
+      "name_raw": "EXTRA ELTONÅSE",
+      "name_canonical": "extra eltonase",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GML. ÅSVEGEN 91",
+      "address_canonical": "gml asvegen 91",
+      "zip": "2034",
+      "city_raw": "HOLTER"
+    },
+    {
+      "name_raw": "EXTRA FAGERHOLT",
+      "name_canonical": "extra fagerholt",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "MAGNUS BARFOTVEI 3",
+      "address_canonical": "magnus barfotvei 3",
+      "zip": "4633",
+      "city_raw": "KRISTIANSAND"
+    },
+    {
+      "name_raw": "EXTRA FESTNINGE",
+      "name_canonical": "extra festninge",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "Ø. LANGELANDSVEI 34",
+      "address_canonical": "ø langelandsvei 34",
+      "zip": "2213",
+      "city_raw": "KONGSVINGER"
+    },
+    {
+      "name_raw": "EXTRA FETSUND",
+      "name_canonical": "extra fetsund",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GAMLE FETVEI 20",
+      "address_canonical": "gamle fetvei 20",
+      "zip": "1900",
+      "city_raw": "FETSUND"
+    },
+    {
+      "name_raw": "EXTRA FEVIK",
+      "name_canonical": "extra fevik",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FEVIKTOPPEN 17",
+      "address_canonical": "feviktoppen 17",
+      "zip": "4870",
+      "city_raw": "FEVIK"
+    },
+    {
+      "name_raw": "EXTRA FINSTADJORDET",
+      "name_canonical": "extra finstadjordet",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FINSTADLIA 3",
+      "address_canonical": "finstadlia 3",
+      "zip": "1475",
+      "city_raw": "FINSTADJORDET"
+    },
+    {
+      "name_raw": "EXTRA FLATEBY",
+      "name_canonical": "extra flateby",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KJENSLIVEIEN 1",
+      "address_canonical": "kjensliveien 1",
+      "zip": "1911",
+      "city_raw": "FLATEBY"
+    },
+    {
+      "name_raw": "EXTRA FRAMNES",
+      "name_canonical": "extra framnes",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VESTERØYVEIEN 27",
+      "address_canonical": "vesterøyveien 27",
+      "zip": "3222",
+      "city_raw": "SANDEFJORD"
+    },
+    {
+      "name_raw": "EXTRA FØRDEGÅRDE",
+      "name_canonical": "extra førdegarde",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "NAUSTDALSVEGEN 5",
+      "address_canonical": "naustdalsvegen 5",
+      "zip": "6800",
+      "city_raw": "FØRDE"
+    },
+    {
+      "name_raw": "EXTRA GAMLEGRENDÅSE",
+      "name_canonical": "extra gamlegrendase",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "JOSEFINE NILSENS VEI 1",
+      "address_canonical": "josefine nilsens vei 1",
+      "zip": "3610",
+      "city_raw": "KONGSBERG"
+    },
+    {
+      "name_raw": "EXTRA GIMLE",
+      "name_canonical": "extra gimle",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "BYGDØY ALLÈ 37",
+      "address_canonical": "bygdøy alle 37",
+      "zip": "0265",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA GLOMMEN BRYGGE",
+      "name_canonical": "extra glommen brygge",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KRÅKERØYVEIEN 2A",
+      "address_canonical": "krakerøyveien 2a",
+      "zip": "1671",
+      "city_raw": "KRÅKERØY"
+    },
+    {
+      "name_raw": "EXTRA GRONG",
+      "name_canonical": "extra grong",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GRANVEGEN 12",
+      "address_canonical": "granvegen 12",
+      "zip": "7870",
+      "city_raw": "GRONG"
+    },
+    {
+      "name_raw": "EXTRA GULLHAUG",
+      "name_canonical": "extra gullhaug",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FOSSVEIEN 95",
+      "address_canonical": "fossveien 95",
+      "zip": "3080",
+      "city_raw": "HOLMESTRAND"
+    },
+    {
+      "name_raw": "EXTRA GÅGATE",
+      "name_canonical": "extra gagate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "C. SUNDTS GATE 10",
+      "address_canonical": "c sundts gate 10",
+      "zip": "5004",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA HAUGERUD SENTER",
+      "name_canonical": "extra haugerud senter",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HAUGERUDSENTER 1-7",
+      "address_canonical": "haugerudsenter 1 7",
+      "zip": "0673",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA HAUGTU",
+      "name_canonical": "extra haugtu",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KJØLEBRØNDSVEIEN 5",
+      "address_canonical": "kjølebrøndsveien 5",
+      "zip": "3766",
+      "city_raw": "SANNIDAL"
+    },
+    {
+      "name_raw": "EXTRA HAUSMANNSGATE",
+      "name_canonical": "extra hausmannsgate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HAUSMANNSGATE 19 A",
+      "address_canonical": "hausmannsgate 19 a",
+      "zip": "0182",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA HAVSTAD",
+      "name_canonical": "extra havstad",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GAMLE SONGEVEI 51",
+      "address_canonical": "gamle songevei 51",
+      "zip": "4842",
+      "city_raw": "ARENDAL"
+    },
+    {
+      "name_raw": "EXTRA HEGGEDAL",
+      "name_canonical": "extra heggedal",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HEGGEDALSVEIEN 350",
+      "address_canonical": "heggedalsveien 350",
+      "zip": "1389",
+      "city_raw": "HEGGEDAL"
+    },
+    {
+      "name_raw": "EXTRA HEGGTOPPE",
+      "name_canonical": "extra heggtoppe",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HEGGTOPPEN 1",
+      "address_canonical": "heggtoppen 1",
+      "zip": "3403",
+      "city_raw": "LIER"
+    },
+    {
+      "name_raw": "EXTRA HELLE",
+      "name_canonical": "extra helle",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HELLEVEIEN 180",
+      "address_canonical": "helleveien 180",
+      "zip": "3790",
+      "city_raw": "HELLE"
+    },
+    {
+      "name_raw": "EXTRA HELLEVEIE",
+      "name_canonical": "extra helleveie",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HELLEVEIEN 263",
+      "address_canonical": "helleveien 263",
+      "zip": "5039",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA HEMSEDAL",
+      "name_canonical": "extra hemsedal",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SENTRUM",
+      "address_canonical": "sentrum",
+      "zip": "3560",
+      "city_raw": "HEMSEDAL"
+    },
+    {
+      "name_raw": "EXTRA HILLEVÅG",
+      "name_canonical": "extra hillevag",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SANDVIKVN. 1",
+      "address_canonical": "sandvikveien 1",
+      "zip": "4016",
+      "city_raw": "STAVANGER"
+    },
+    {
+      "name_raw": "EXTRA HITRA",
+      "name_canonical": "extra hitra",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KJØPESENTERET HJORTEN",
+      "address_canonical": "kjøpesenteret hjorten",
+      "zip": "7240",
+      "city_raw": "HITRA"
+    },
+    {
+      "name_raw": "EXTRA HOKKSUND SENTRUM",
+      "name_canonical": "extra hokksund sentrum",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "TANGENGT. 2",
+      "address_canonical": "tangengate 2",
+      "zip": "3300",
+      "city_raw": "HOKKSUND"
+    },
+    {
+      "name_raw": "EXTRA HONNINGSVÅG",
+      "name_canonical": "extra honningsvag",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STORGATA 18",
+      "address_canonical": "storgata 18",
+      "zip": "9750",
+      "city_raw": "HONNINGSVÅG"
+    },
+    {
+      "name_raw": "EXTRA HOVDE",
+      "name_canonical": "extra hovde",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "OTRAVEGEN 11",
+      "address_canonical": "otravegen 11",
+      "zip": "4755",
+      "city_raw": "HOVDEN"
+    },
+    {
+      "name_raw": "EXTRA HUNNDALE",
+      "name_canonical": "extra hunndale",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "RAUFOSSVEIEN 223",
+      "address_canonical": "raufossveien 223",
+      "zip": "2827",
+      "city_raw": "HUNNDALEN"
+    },
+    {
+      "name_raw": "EXTRA HUSEBY",
+      "name_canonical": "extra huseby",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STASJONSVEIN 69",
+      "address_canonical": "stasjonsvein 69",
+      "zip": "0768",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA HÅKONSGATE",
+      "name_canonical": "extra hakonsgate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HÅKONSGATEN 36",
+      "address_canonical": "hakonsgaten 36",
+      "zip": "5015",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA ISRENNA",
+      "name_canonical": "extra isrenna",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STAKKEVOLLVN. 321",
+      "address_canonical": "stakkevollveien 321",
+      "zip": "9019",
+      "city_raw": "TROMSØ"
+    },
+    {
+      "name_raw": "EXTRA JAR",
+      "name_canonical": "extra jar",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STORENGVEIEN 8",
+      "address_canonical": "storengveien 8",
+      "zip": "1358",
+      "city_raw": "JAR"
+    },
+    {
+      "name_raw": "EXTRA JELØY",
+      "name_canonical": "extra jeløy",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "TRONVIKVEIEN 1",
+      "address_canonical": "tronvikveien 1",
+      "zip": "1517",
+      "city_raw": "MOSS"
+    },
+    {
+      "name_raw": "EXTRA JESSHEIM",
+      "name_canonical": "extra jessheim",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "TRONDHEIMSVN. 85",
+      "address_canonical": "trondheimsveien 85",
+      "zip": "2050",
+      "city_raw": "JESSHEIM"
+    },
+    {
+      "name_raw": "EXTRA KALFARVEIE",
+      "name_canonical": "extra kalfarveie",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KALFARVEIEN 76",
+      "address_canonical": "kalfarveien 76",
+      "zip": "5018",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA KAMBO FORUM",
+      "name_canonical": "extra kambo forum",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SKREDDERVN. 2",
+      "address_canonical": "skredderveien 2",
+      "zip": "1537",
+      "city_raw": "MOSS"
+    },
+    {
+      "name_raw": "EXTRA KANNIK",
+      "name_canonical": "extra kannik",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ENGELSMINNEGATEN 16 C",
+      "address_canonical": "engelsminnegaten 16 c",
+      "zip": "4008",
+      "city_raw": "STAVANGER"
+    },
+    {
+      "name_raw": "EXTRA KARMSUNDGATA",
+      "name_canonical": "extra karmsundgata",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KARMSUNDGATA 54",
+      "address_canonical": "karmsundgata 54",
+      "zip": "5529",
+      "city_raw": "HAUGESUND"
+    },
+    {
+      "name_raw": "EXTRA KIRKEBY",
+      "name_canonical": "extra kirkeby",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VALDRESVEGEN 6",
+      "address_canonical": "valdresvegen 6",
+      "zip": "2816",
+      "city_raw": "GJØVIK"
+    },
+    {
+      "name_raw": "EXTRA KIRKENÆR",
+      "name_canonical": "extra kirkenær",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SILOVEIEN 4",
+      "address_canonical": "siloveien 4",
+      "zip": "2260",
+      "city_raw": "KIRKENÆR"
+    },
+    {
+      "name_raw": "EXTRA KLEKKE",
+      "name_canonical": "extra klekke",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ØVRE KLEKKENVEI 53",
+      "address_canonical": "øvre klekkenvei 53",
+      "zip": "3514",
+      "city_raw": "HØNEFOSS"
+    },
+    {
+      "name_raw": "EXTRA KONGSHAV",
+      "name_canonical": "extra kongshav",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ØSTRE TROMØYVEI 388",
+      "address_canonical": "østre tromøyvei 388",
+      "zip": "4812",
+      "city_raw": "KONGSHAVN"
+    },
+    {
+      "name_raw": "EXTRA KVALA",
+      "name_canonical": "extra kvala",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KRINGLEHAUGVN. 2",
+      "address_canonical": "kringlehaugveien 2",
+      "zip": "5516",
+      "city_raw": "HAUGESUND"
+    },
+    {
+      "name_raw": "EXTRA LANDE SENTER",
+      "name_canonical": "extra lande senter",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VESTREVEI 4",
+      "address_canonical": "vestrevei 4",
+      "zip": "1710",
+      "city_raw": "SARPSBORG"
+    },
+    {
+      "name_raw": "EXTRA LANGHUS",
+      "name_canonical": "extra langhus",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GAMLE VEVELSTADVEI 2C",
+      "address_canonical": "gamle vevelstadvei 2c",
+      "zip": "1405",
+      "city_raw": "LANGHUS"
+    },
+    {
+      "name_raw": "EXTRA LEUTHENHAVE",
+      "name_canonical": "extra leuthenhave",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KONGENS GATE 27",
+      "address_canonical": "kongens gate 27",
+      "zip": "7012",
+      "city_raw": "TRONDHEIM"
+    },
+    {
+      "name_raw": "EXTRA LONE",
+      "name_canonical": "extra lone",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HARDANGERVEIEN 701",
+      "address_canonical": "hardangerveien 701",
+      "zip": "5268",
+      "city_raw": "HAUKELAND"
+    },
+    {
+      "name_raw": "EXTRA LONEVÅG",
+      "name_canonical": "extra lonevag",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FOTLANDSVEGEN 7",
+      "address_canonical": "fotlandsvegen 7",
+      "zip": "5282",
+      "city_raw": "LONEVÅG"
+    },
+    {
+      "name_raw": "EXTRA LYSEHAGA",
+      "name_canonical": "extra lysehaga",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "LYSEHAGAN 46",
+      "address_canonical": "lysehagan 46",
+      "zip": "0383",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA LØRENFALLET",
+      "name_canonical": "extra lørenfallet",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HALDENVEGEN 321",
+      "address_canonical": "haldenvegen 321",
+      "zip": "1923",
+      "city_raw": "SØRUM"
+    },
+    {
+      "name_raw": "EXTRA LØVÅS",
+      "name_canonical": "extra løvas",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "LØVÅSVEIEN 20",
+      "address_canonical": "løvasveien 20",
+      "zip": "5145",
+      "city_raw": "FYLLINGSDALEN"
+    },
+    {
+      "name_raw": "EXTRA MAASESKJÆRET",
+      "name_canonical": "extra maaseskjæret",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SANDSVIKSVEIEN 94",
+      "address_canonical": "sandsviksveien 94",
+      "zip": "5035",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA MADLA",
+      "name_canonical": "extra madla",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "RAGBAKKEN 84",
+      "address_canonical": "ragbakken 84",
+      "zip": "4042",
+      "city_raw": "HAFRSFJORD"
+    },
+    {
+      "name_raw": "EXTRA MAJORSTUE",
+      "name_canonical": "extra majorstue",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HARALD HÅRFAGRESGT 2",
+      "address_canonical": "harald harfagresgate 2",
+      "zip": "0363",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA MAKRELLBEKKE",
+      "name_canonical": "extra makrellbekke",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ØVRE SMEDSTADSVEI 2",
+      "address_canonical": "øvre smedstadsvei 2",
+      "zip": "0378",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA MANDAL BRYGGE",
+      "name_canonical": "extra mandal brygge",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KASTELLGATA 12D",
+      "address_canonical": "kastellgata 12d",
+      "zip": "4514",
+      "city_raw": "MANDAL"
+    },
+    {
+      "name_raw": "EXTRA MANGLERUD SENTER",
+      "name_canonical": "extra manglerud senter",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "PLOGVEIEN 6",
+      "address_canonical": "plogveien 6",
+      "zip": "0679",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA MANSTAD",
+      "name_canonical": "extra manstad",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "LERVIKVEIEN 26",
+      "address_canonical": "lervikveien 26",
+      "zip": "1626",
+      "city_raw": "MANSTAD"
+    },
+    {
+      "name_raw": "EXTRA MASTREVIK",
+      "name_canonical": "extra mastrevik",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "MASTREVIK TORG",
+      "address_canonical": "mastrevik torg",
+      "zip": "5943",
+      "city_raw": "AUSTRHEIM"
+    },
+    {
+      "name_raw": "EXTRA MATHOPE",
+      "name_canonical": "extra mathope",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SKAREVEIEN 1 A",
+      "address_canonical": "skareveien 1 a",
+      "zip": "5174",
+      "city_raw": "MATHOPEN"
+    },
+    {
+      "name_raw": "EXTRA MAXIS",
+      "name_canonical": "extra maxis",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VESTERVEIEN 44",
+      "address_canonical": "vesterveien 44",
+      "zip": "4839",
+      "city_raw": "ARENDAL"
+    },
+    {
+      "name_raw": "EXTRA MINDE",
+      "name_canonical": "extra minde",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "MINDE ALLÈ 48",
+      "address_canonical": "minde alle 48",
+      "zip": "5068",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA MJØNDALE",
+      "name_canonical": "extra mjøndale",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ARBEIDERGATA 6",
+      "address_canonical": "arbeidergata 6",
+      "zip": "3050",
+      "city_raw": "MJØNDALEN"
+    },
+    {
+      "name_raw": "EXTRA MORTENSRUD",
+      "name_canonical": "extra mortensrud",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "LOFSRUDVN. 6",
+      "address_canonical": "lofsrudveien 6",
+      "zip": "1281",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA MOSSERØD",
+      "name_canonical": "extra mosserød",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "RINGVEIEN 71",
+      "address_canonical": "ringveien 71",
+      "zip": "3226",
+      "city_raw": "SANDEFJORD"
+    },
+    {
+      "name_raw": "EXTRA NARVIK STORSENTER",
+      "name_canonical": "extra narvik storsenter",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KONGENSGT. 66",
+      "address_canonical": "kongensgate 66",
+      "zip": "8514",
+      "city_raw": "NARVIK"
+    },
+    {
+      "name_raw": "EXTRA NESODDTANGE",
+      "name_canonical": "extra nesoddtange",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KAPELLVEIEN 2",
+      "address_canonical": "kapellveien 2",
+      "zip": "1452",
+      "city_raw": "NESODDTANGEN"
+    },
+    {
+      "name_raw": "EXTRA NEUBERGGT.",
+      "name_canonical": "extra neuberggt",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "NEUBERGGT. 19",
+      "address_canonical": "neuberggate 19",
+      "zip": "0367",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA NOTODDE",
+      "name_canonical": "extra notodde",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STORGT. 13",
+      "address_canonical": "storgate 13",
+      "zip": "3674",
+      "city_raw": "NOTODDEN"
+    },
+    {
+      "name_raw": "EXTRA NØTTERØY",
+      "name_canonical": "extra nøtterøy",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SMIDSRØDVN. 39",
+      "address_canonical": "smidsrødveien 39",
+      "zip": "3120",
+      "city_raw": "TØNSBERG"
+    },
+    {
+      "name_raw": "EXTRA OLSVIK",
+      "name_canonical": "extra olsvik",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "OLSVIKSKJENET 155/157",
+      "address_canonical": "olsvikskjenet 155 157",
+      "zip": "5184",
+      "city_raw": "OLSVIK"
+    },
+    {
+      "name_raw": "EXTRA OSØYRO",
+      "name_canonical": "extra osøyro",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ØYRO 59",
+      "address_canonical": "øyro 59",
+      "zip": "5200",
+      "city_raw": "OS"
+    },
+    {
+      "name_raw": "EXTRA PARKEN KRSAND",
+      "name_canonical": "extra parken krsand",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GYLDENLØVESGATE 14",
+      "address_canonical": "gyldenløvesgate 14",
+      "zip": "4611",
+      "city_raw": "KRISTIANSAND"
+    },
+    {
+      "name_raw": "EXTRA PETROLEUMSVEIE",
+      "name_canonical": "extra petroleumsveie",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "PETROLEUMSVN. 6",
+      "address_canonical": "petroleumsveien 6",
+      "zip": "4033",
+      "city_raw": "STAVANGER"
+    },
+    {
+      "name_raw": "EXTRA PRESTAMARKA",
+      "name_canonical": "extra prestamarka",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "EINERHAUGVEGEN 2",
+      "address_canonical": "einerhaugvegen 2",
+      "zip": "4120",
+      "city_raw": "TAU"
+    },
+    {
+      "name_raw": "EXTRA PRINSDAL",
+      "name_canonical": "extra prinsdal",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "NEDRE PRINSDALSVEI 70",
+      "address_canonical": "nedre prinsdalsvei 70",
+      "zip": "1263",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA RANDVIK",
+      "name_canonical": "extra randvik",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "TYRIVEIEN 25",
+      "address_canonical": "tyriveien 25",
+      "zip": "4956",
+      "city_raw": "RISØR"
+    },
+    {
+      "name_raw": "EXTRA RISKA",
+      "name_canonical": "extra riska",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HOMMERSÅKVN. 20",
+      "address_canonical": "hommersakveien 20",
+      "zip": "4311",
+      "city_raw": "HOMMERSÅK"
+    },
+    {
+      "name_raw": "EXTRA RISVOLLA",
+      "name_canonical": "extra risvolla",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "INGEBORG AASV. 4",
+      "address_canonical": "ingeborg aasv 4",
+      "zip": "7036",
+      "city_raw": "TRONDHEIM"
+    },
+    {
+      "name_raw": "EXTRA ROTSET VOLDA",
+      "name_canonical": "extra rotset volda",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "PRESTEGATA 29",
+      "address_canonical": "prestegata 29",
+      "zip": "6100",
+      "city_raw": "VOLDA"
+    },
+    {
+      "name_raw": "EXTRA RÅDHUSGATE",
+      "name_canonical": "extra radhusgate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "RÅDHUSGATEN 24",
+      "address_canonical": "radhusgaten 24",
+      "zip": "4100",
+      "city_raw": "JØRPELAND"
+    },
+    {
+      "name_raw": "EXTRA RÆLINGE",
+      "name_canonical": "extra rælinge",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "BUHOLEN 4",
+      "address_canonical": "buholen 4",
+      "zip": "2005",
+      "city_raw": "RÆLINGEN"
+    },
+    {
+      "name_raw": "EXTRA SAGA SENTER",
+      "name_canonical": "extra saga senter",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "DAMPSAGA ALLÈ 2",
+      "address_canonical": "dampsaga alle 2",
+      "zip": "2050",
+      "city_raw": "JESSHEIM"
+    },
+    {
+      "name_raw": "EXTRA SAGENE",
+      "name_canonical": "extra sagene",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "THURMANNSGT 12B",
+      "address_canonical": "thurmannsgate 12b",
+      "zip": "0461",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA SAMA",
+      "name_canonical": "extra sama",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FLÅTENVEIEN 2",
+      "address_canonical": "flatenveien 2",
+      "zip": "9404",
+      "city_raw": "HARSTAD"
+    },
+    {
+      "name_raw": "EXTRA SANDVIKA",
+      "name_canonical": "extra sandvika",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "LEIF TRONSTADPL. 7",
+      "address_canonical": "leif tronstadpl 7",
+      "zip": "1337",
+      "city_raw": "SANDVIKA"
+    },
+    {
+      "name_raw": "EXTRA SANNERGATA",
+      "name_canonical": "extra sannergata",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SANNERGATA 11",
+      "address_canonical": "sannergata 11",
+      "zip": "0557",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA SELLEBAKK",
+      "name_canonical": "extra sellebakk",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "LØENVEIEN 6",
+      "address_canonical": "løenveien 6",
+      "zip": "1653",
+      "city_raw": "SELLEBAKK"
+    },
+    {
+      "name_raw": "EXTRA SIGGERUD",
+      "name_canonical": "extra siggerud",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SVALEVEIEN 6",
+      "address_canonical": "svaleveien 6",
+      "zip": "1404",
+      "city_raw": "SIGGERUD"
+    },
+    {
+      "name_raw": "EXTRA SKI",
+      "name_canonical": "extra ski",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KJEPPESTADVEIEN 2",
+      "address_canonical": "kjeppestadveien 2",
+      "zip": "1400",
+      "city_raw": "SKI"
+    },
+    {
+      "name_raw": "EXTRA SKREIA",
+      "name_canonical": "extra skreia",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "JERIKOVEGEN 4",
+      "address_canonical": "jerikovegen 4",
+      "zip": "2848",
+      "city_raw": "SKREIA"
+    },
+    {
+      "name_raw": "EXTRA SKULLERUD",
+      "name_canonical": "extra skullerud",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "JOHAN SCHARFFENBERGSVEI 118",
+      "address_canonical": "johan scharffenbergsvei 118",
+      "zip": "0694",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA SLEMDAL",
+      "name_canonical": "extra slemdal",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STASJONSVN. 2-4",
+      "address_canonical": "stasjonsveien 2 4",
+      "zip": "0776",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA SOGNDALSFJØRA",
+      "name_canonical": "extra sogndalsfjøra",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FJØREVEGEN 20",
+      "address_canonical": "fjørevegen 20",
+      "zip": "6856",
+      "city_raw": "SOGNDAL"
+    },
+    {
+      "name_raw": "EXTRA ST. HALVARDSGATE",
+      "name_canonical": "extra st halvardsgate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ST. HALVARDSGATE 67",
+      "address_canonical": "st halvardsgate 67",
+      "zip": "0657",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA ST. MARIE GATE",
+      "name_canonical": "extra st marie gate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ST. MARIEGT. 81/87",
+      "address_canonical": "st mariegate 81 87",
+      "zip": "1706",
+      "city_raw": "SARPSBORG"
+    },
+    {
+      "name_raw": "EXTRA ST. OLAVSGATE",
+      "name_canonical": "extra st olavsgate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ST. OLAVSGT. 18 A",
+      "address_canonical": "st olavsgate 18 a",
+      "zip": "3112",
+      "city_raw": "TØNSBERG"
+    },
+    {
+      "name_raw": "EXTRA STAVER",
+      "name_canonical": "extra staver",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "PRINSENSGT. 20",
+      "address_canonical": "prinsensgate 20",
+      "zip": "3290",
+      "city_raw": "STAVERN"
+    },
+    {
+      "name_raw": "EXTRA STOREBØ",
+      "name_canonical": "extra storebø",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STOREBØVEGEN 201A",
+      "address_canonical": "storebøvegen 201a",
+      "zip": "5392",
+      "city_raw": "STOREBØ"
+    },
+    {
+      "name_raw": "EXTRA STORELVA",
+      "name_canonical": "extra storelva",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STORELVBAKKEN 5",
+      "address_canonical": "storelvbakken 5",
+      "zip": "9104",
+      "city_raw": "KVALØYA"
+    },
+    {
+      "name_raw": "EXTRA STOVNER",
+      "name_canonical": "extra stovner",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STOVNER SENTER 3",
+      "address_canonical": "stovner senter 3",
+      "zip": "0985",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA STØPERIGÅRDE",
+      "name_canonical": "extra støperigarde",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STØPERIGT. 24",
+      "address_canonical": "støperigate 24",
+      "zip": "4014",
+      "city_raw": "STAVANGER"
+    },
+    {
+      "name_raw": "EXTRA SVEIO",
+      "name_canonical": "extra sveio",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SVEIO SENTRUM",
+      "address_canonical": "sveio sentrum",
+      "zip": "5550",
+      "city_raw": "SVEIO"
+    },
+    {
+      "name_raw": "EXTRA SVELVIK",
+      "name_canonical": "extra svelvik",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STRØMMVEIEN 76",
+      "address_canonical": "strømmveien 76",
+      "zip": "3060",
+      "city_raw": "SVELVIK"
+    },
+    {
+      "name_raw": "EXTRA SÆDALE",
+      "name_canonical": "extra sædale",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SÆDALSSVINGENE 3",
+      "address_canonical": "sædalssvingene 3",
+      "zip": "5098",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA SØRUMSAND",
+      "name_canonical": "extra sørumsand",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VILLAVEIEN 1",
+      "address_canonical": "villaveien 1",
+      "zip": "1920",
+      "city_raw": "SØRUMSAND"
+    },
+    {
+      "name_raw": "EXTRA TASTA",
+      "name_canonical": "extra tasta",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GJERDEVN. 49",
+      "address_canonical": "gjerdeveien 49",
+      "zip": "4028",
+      "city_raw": "STAVANGER"
+    },
+    {
+      "name_raw": "EXTRA TEMPE",
+      "name_canonical": "extra tempe",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "TEMPEVN. 22",
+      "address_canonical": "tempeveien 22",
+      "zip": "7031",
+      "city_raw": "TRONDHEIM"
+    },
+    {
+      "name_raw": "EXTRA THERESESGATE",
+      "name_canonical": "extra theresesgate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "THERESESGATE 29",
+      "address_canonical": "theresesgate 29",
+      "zip": "0354",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA TJELTA",
+      "name_canonical": "extra tjelta",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VIGDELSVEIEN 700",
+      "address_canonical": "vigdelsveien 700",
+      "zip": "4054",
+      "city_raw": "TJELTA"
+    },
+    {
+      "name_raw": "EXTRA TJØME",
+      "name_canonical": "extra tjøme",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HAUGSJORDET 2",
+      "address_canonical": "haugsjordet 2",
+      "zip": "3145",
+      "city_raw": "TJØME"
+    },
+    {
+      "name_raw": "EXTRA TOLVSRØD",
+      "name_canonical": "extra tolvsrød",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VALLØVEIEN 62",
+      "address_canonical": "valløveien 62",
+      "zip": "3152",
+      "city_raw": "TOLVSRØD"
+    },
+    {
+      "name_raw": "EXTRA TRIADE",
+      "name_canonical": "extra triade",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "GAMLEVEIEN 88",
+      "address_canonical": "gamleveien 88",
+      "zip": "1476",
+      "city_raw": "RASTA"
+    },
+    {
+      "name_raw": "EXTRA TRONDHEIMSVEIE",
+      "name_canonical": "extra trondheimsveie",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "TRONDHEIMSVEIEN 5",
+      "address_canonical": "trondheimsveien 5",
+      "zip": "0560",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA TVEITA SENTER",
+      "name_canonical": "extra tveita senter",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "TVETENVEIEN 150",
+      "address_canonical": "tvetenveien 150",
+      "zip": "0671",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA TYSNES",
+      "name_canonical": "extra tysnes",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HEGGLANDSVEGEN 37",
+      "address_canonical": "hegglandsvegen 37",
+      "zip": "5680",
+      "city_raw": "TYSNES"
+    },
+    {
+      "name_raw": "EXTRA UGLA",
+      "name_canonical": "extra ugla",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ANDERS WIGENS VEI 2",
+      "address_canonical": "anders wigens vei 2",
+      "zip": "7024",
+      "city_raw": "TRONDHEIM"
+    },
+    {
+      "name_raw": "EXTRA ULEFOSS",
+      "name_canonical": "extra ulefoss",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STÅRRVEGEN 5",
+      "address_canonical": "starrvegen 5",
+      "zip": "3830",
+      "city_raw": "ULEFOSS"
+    },
+    {
+      "name_raw": "EXTRA ULSET",
+      "name_canonical": "extra ulset",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "HESTHAUGVEGEN 30",
+      "address_canonical": "hesthaugvegen 30",
+      "zip": "5119",
+      "city_raw": "ULSET"
+    },
+    {
+      "name_raw": "EXTRA VARDÅS",
+      "name_canonical": "extra vardas",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SALBUSTADVEIEN 2",
+      "address_canonical": "salbustadveien 2",
+      "zip": "4638",
+      "city_raw": "KRISTIANSAND"
+    },
+    {
+      "name_raw": "EXTRA VARDÅSE",
+      "name_canonical": "extra vardase",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SLOTTSBERGET 2",
+      "address_canonical": "slottsberget 2",
+      "zip": "1385",
+      "city_raw": "ASKER"
+    },
+    {
+      "name_raw": "EXTRA VEGGLI",
+      "name_canonical": "extra veggli",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KOLVEGEN 4",
+      "address_canonical": "kolvegen 4",
+      "zip": "3628",
+      "city_raw": "VEGGLI"
+    },
+    {
+      "name_raw": "EXTRA VESTAD",
+      "name_canonical": "extra vestad",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "MEIERIGT. 2-4",
+      "address_canonical": "meierigate 2 4",
+      "zip": "2406",
+      "city_raw": "ELVERUM"
+    },
+    {
+      "name_raw": "EXTRA VESTHEIENE",
+      "name_canonical": "extra vestheiene",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "SKOMAGERGADA 9",
+      "address_canonical": "skomagergada 9",
+      "zip": "4628",
+      "city_raw": "KRISTIANSAND"
+    },
+    {
+      "name_raw": "EXTRA VIKELAND",
+      "name_canonical": "extra vikeland",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "LUNDEGÅRDEN",
+      "address_canonical": "lundegarden",
+      "zip": "4700",
+      "city_raw": "VENNESLA"
+    },
+    {
+      "name_raw": "EXTRA VIKERSUND",
+      "name_canonical": "extra vikersund",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "NÆRSENTERET",
+      "address_canonical": "nærsenteret",
+      "zip": "3370",
+      "city_raw": "VIKERSUND"
+    },
+    {
+      "name_raw": "EXTRA VOLDE",
+      "name_canonical": "extra volde",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VOLLVEIEN 2",
+      "address_canonical": "vollveien 2",
+      "zip": "8011",
+      "city_raw": "BODØ"
+    },
+    {
+      "name_raw": "EXTRA VORMSUND",
+      "name_canonical": "extra vormsund",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "KJØLSTADVEIEN 1",
+      "address_canonical": "kjølstadveien 1",
+      "zip": "2160",
+      "city_raw": "VORMSUND"
+    },
+    {
+      "name_raw": "EXTRA VOSSEGATA",
+      "name_canonical": "extra vossegata",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VOSSEGATA 34",
+      "address_canonical": "vossegata 34",
+      "zip": "0475",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "EXTRA YVE",
+      "name_canonical": "extra yve",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "FJELLHØYVEIEN 1",
+      "address_canonical": "fjellhøyveien 1",
+      "zip": "1718",
+      "city_raw": "GREÅKER"
+    },
+    {
+      "name_raw": "EXTRA ÅSSIDE",
+      "name_canonical": "extra asside",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "STORE LANDFALL ØVRE 100",
+      "address_canonical": "store landfall øvre 100",
+      "zip": "3025",
+      "city_raw": "DRAMMEN"
+    },
+    {
+      "name_raw": "EXTRA ØREBEKK",
+      "name_canonical": "extra ørebekk",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "PANCOVEIEN 15",
+      "address_canonical": "pancoveien 15",
+      "zip": "1624",
+      "city_raw": "GRESSVIK"
+    },
+    {
+      "name_raw": "EXTRA ØVREGATE",
+      "name_canonical": "extra øvregate",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ØVREGATEN 37",
+      "address_canonical": "øvregaten 37",
+      "zip": "5003",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "EXTRA ØYGARDE",
+      "name_canonical": "extra øygarde",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "ØYGARDEN",
+      "address_canonical": "øygarden",
+      "zip": "4262",
+      "city_raw": "AVALDSNES"
+    },
+    {
+      "name_raw": "EXTRA ØYGÅRDSDALE",
+      "name_canonical": "extra øygardsdale",
+      "chain_raw": "Extra",
+      "chain_id": "extra",
+      "address_raw": "VESTERLED 104, ØDEGÅRDSDALEN",
+      "address_canonical": "vesterled 104 ødegardsdalen",
+      "zip": "4877",
+      "city_raw": "GRIMSTAD"
+    },
+    {
+      "name_raw": "COOP MEGA AKER BRYGGE",
+      "name_canonical": "mega aker brygge",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "HOLMENSGT. 7",
+      "address_canonical": "holmensgate 7",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA ALEXANDER KIELLANDSP",
+      "name_canonical": "mega alexander kiellandsp",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "WALDEMAR THRANESGT. 72",
+      "address_canonical": "waldemar thranesgate 72",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA BEKKEVOLL",
+      "name_canonical": "mega bekkevoll",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "MOLDELIVEIEN 97",
+      "address_canonical": "moldeliveien 97",
+      "zip": "6412",
+      "city_raw": "MOLDE"
+    },
+    {
+      "name_raw": "COOP MEGA BERJASENTERET",
+      "name_canonical": "mega berjasenteret",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "HERMAN FOSS GATE 12",
+      "address_canonical": "herman foss gate 12",
+      "zip": "3611",
+      "city_raw": "KONGSBERG"
+    },
+    {
+      "name_raw": "COOP MEGA GAUSEL",
+      "name_canonical": "mega gausel",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "GULLSPENNETUNET 1/GAUSELSENTERET",
+      "address_canonical": "gullspennetunet 1 gauselsenteret",
+      "zip": "4032",
+      "city_raw": "STAVANGER"
+    },
+    {
+      "name_raw": "COOP MEGA HASLE TORG",
+      "name_canonical": "mega hasle torg",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "GRENSEVEIEN 50",
+      "address_canonical": "grenseveien 50",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA HOLME",
+      "name_canonical": "mega holme",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "NYE HOLMENSENTERET, VOGELLUND 6",
+      "address_canonical": "nye holmensenteret vogellund 6",
+      "zip": "1394",
+      "city_raw": "NESBRU"
+    },
+    {
+      "name_raw": "COOP MEGA KILDE",
+      "name_canonical": "mega kilde",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "GARTNERVEIEN 16",
+      "address_canonical": "gartnerveien 16",
+      "zip": "4016",
+      "city_raw": "STAVANGER"
+    },
+    {
+      "name_raw": "COOP MEGA LINDERUD",
+      "name_canonical": "mega linderud",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "ERIK MOGENSØNS VEI 38",
+      "address_canonical": "erik mogensøns vei 38",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA LUND",
+      "name_canonical": "mega lund",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "STADIONVEIEN 1",
+      "address_canonical": "stadionveien 1",
+      "zip": "4632",
+      "city_raw": "KRISTIANSAND"
+    },
+    {
+      "name_raw": "COOP MEGA NARDO",
+      "name_canonical": "mega nardo",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "HANS BAUCKSVEI 1",
+      "address_canonical": "hans baucksvei 1",
+      "zip": "7030",
+      "city_raw": "TRONDHEIM"
+    },
+    {
+      "name_raw": "COOP MEGA NITTEDAL",
+      "name_canonical": "mega nittedal",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "MATTIAS SKYTTERSVEI 2",
+      "address_canonical": "mattias skyttersvei 2",
+      "zip": "1482",
+      "city_raw": "NITTEDAL"
+    },
+    {
+      "name_raw": "COOP MEGA NORDÅS",
+      "name_canonical": "mega nordas",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "SØRÅSHØGDA 9",
+      "address_canonical": "sørashøgda 9",
+      "zip": "5235",
+      "city_raw": "NORDÅS"
+    },
+    {
+      "name_raw": "COOP MEGA NYDALE",
+      "name_canonical": "mega nydale",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "NYDALSVEIEN 33",
+      "address_canonical": "nydalsveien 33",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA SANDAKER",
+      "name_canonical": "mega sandaker",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "SANDAKERVN. 59",
+      "address_canonical": "sandakerveien 59",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA SIRKUS SHOPPING",
+      "name_canonical": "mega sirkus shopping",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "FALKENBORGVEGEN 9",
+      "address_canonical": "falkenborgvegen 9",
+      "zip": "7044",
+      "city_raw": "TRONDHEIM"
+    },
+    {
+      "name_raw": "COOP MEGA SJØLYST",
+      "name_canonical": "mega sjølyst",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "KARENSLYST ALLÈ 58",
+      "address_canonical": "karenslyst alle 58",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA STORO",
+      "name_canonical": "mega storo",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "VITAMINVEIEN 7/9",
+      "address_canonical": "vitaminveien 7 9",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA SØGNE",
+      "name_canonical": "mega søgne",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "SENTRUMSVEIEN 1",
+      "address_canonical": "sentrumsveien 1",
+      "zip": "4640",
+      "city_raw": "SØGNE"
+    },
+    {
+      "name_raw": "COOP MEGA ULLEVÅL",
+      "name_canonical": "mega ulleval",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "SOGNSVEIEN 77C",
+      "address_canonical": "sognsveien 77c",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA VINDERE",
+      "name_canonical": "mega vindere",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "BORGENVEIEN 48",
+      "address_canonical": "borgenveien 48",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP MEGA VÅGSBYGD",
+      "name_canonical": "mega vagsbygd",
+      "chain_raw": "Coop Mega",
+      "chain_id": "mega",
+      "address_raw": "VÅGSBYGD RINGVEI 100",
+      "address_canonical": "vagsbygd ringvei 100",
+      "zip": "4621",
+      "city_raw": "KRISTIANSAND"
+    },
+    {
+      "name_raw": "COOP PRIX ALEXANDER KIELLANDS GT",
+      "name_canonical": "prix alexander kiellands gt",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "ALEX.KIELLANDSGT. 10",
+      "address_canonical": "alex kiellandsgate 10",
+      "zip": "2000",
+      "city_raw": "LILLESTRØM"
+    },
+    {
+      "name_raw": "COOP PRIX BESSERUD",
+      "name_canonical": "prix besserud",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "HOLMENKOLLVEIEN 96",
+      "address_canonical": "holmenkollveien 96",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX BESTUM",
+      "name_canonical": "prix bestum",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "VÆKERØVEIEN 24",
+      "address_canonical": "vækerøveien 24",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX BJERKÅS.",
+      "name_canonical": "prix bjerkas",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "HØYMYRMARKA 3",
+      "address_canonical": "høymyrmarka 3",
+      "zip": "1390",
+      "city_raw": "VOLLEN"
+    },
+    {
+      "name_raw": "COOP PRIX BYGDØY ALLÈ",
+      "name_canonical": "prix bygdøy alle",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "BYGDØY ALLÈ 61",
+      "address_canonical": "bygdøy alle 61",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX DRANGEID",
+      "name_canonical": "prix drangeid",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "GLENDRANGEVEIEN 5",
+      "address_canonical": "glendrangeveien 5",
+      "zip": "4400",
+      "city_raw": "FLEKKEFJORD"
+    },
+    {
+      "name_raw": "COOP PRIX FARMANNSVEIE",
+      "name_canonical": "prix farmannsveie",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "FARMANNSVEIEN 28",
+      "address_canonical": "farmannsveien 28",
+      "zip": "3111",
+      "city_raw": "TØNSBERG"
+    },
+    {
+      "name_raw": "COOP PRIX FRANKENDALSVEIE",
+      "name_canonical": "prix frankendalsveie",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "FRANKENDALSVEIEN 95",
+      "address_canonical": "frankendalsveien 95",
+      "zip": "3274",
+      "city_raw": "LARVIK"
+    },
+    {
+      "name_raw": "COOP PRIX HAGEVEIE",
+      "name_canonical": "prix hageveie",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "HAGEVEIEN 2",
+      "address_canonical": "hageveien 2",
+      "zip": "1400",
+      "city_raw": "SKI"
+    },
+    {
+      "name_raw": "COOP PRIX HÅNNI",
+      "name_canonical": "prix hanni",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "EPLEVEIEN 1",
+      "address_canonical": "epleveien 1",
+      "zip": "4635",
+      "city_raw": "KRISTIANSAND"
+    },
+    {
+      "name_raw": "COOP PRIX INNVIK",
+      "name_canonical": "prix innvik",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "FV60 VAGSTADBYGGET",
+      "address_canonical": "fv60 vagstadbygget",
+      "zip": "6793",
+      "city_raw": "INNVIK"
+    },
+    {
+      "name_raw": "COOP PRIX LEKNES",
+      "name_canonical": "prix leknes",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "LEKNESKROKEN 3",
+      "address_canonical": "lekneskroken 3",
+      "zip": "8370",
+      "city_raw": "LEKNES"
+    },
+    {
+      "name_raw": "COOP PRIX LILLESTRØM TORV",
+      "name_canonical": "prix lillestrøm torv",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "TEATERGT. 14",
+      "address_canonical": "teatergate 14",
+      "zip": "2000",
+      "city_raw": "LILLESTRØM"
+    },
+    {
+      "name_raw": "COOP PRIX MARKE",
+      "name_canonical": "prix marke",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "MARKEN 3",
+      "address_canonical": "marken 3",
+      "zip": "5017",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "COOP PRIX MARSVEIE",
+      "name_canonical": "prix marsveie",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "MARSVEIEN 2",
+      "address_canonical": "marsveien 2",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX OPPSALSTUBBE",
+      "name_canonical": "prix oppsalstubbe",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "OPPSALSTUBBEN 3",
+      "address_canonical": "oppsalstubben 3",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX PERSAUNET",
+      "name_canonical": "prix persaunet",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "TESSEMSVEI 2",
+      "address_canonical": "tessemsvei 2",
+      "zip": "7045",
+      "city_raw": "TRONDHEIM"
+    },
+    {
+      "name_raw": "COOP PRIX POSTGIROBYGGET",
+      "name_canonical": "prix postgirobygget",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "BISKOP GUNNERUSGT. 14",
+      "address_canonical": "biskop gunnerusgate 14",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX RISØR",
+      "name_canonical": "prix risør",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "STRANDGT. 3",
+      "address_canonical": "strandgate 3",
+      "zip": "4950",
+      "city_raw": "RISØR"
+    },
+    {
+      "name_raw": "COOP PRIX ROSENDAL",
+      "name_canonical": "prix rosendal",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "ROSENDAL",
+      "address_canonical": "rosendal",
+      "zip": "5470",
+      "city_raw": "ROSENDAL"
+    },
+    {
+      "name_raw": "COOP PRIX RÅDE",
+      "name_canonical": "prix rade",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "MOSSEVEIEN 4",
+      "address_canonical": "mosseveien 4",
+      "zip": "1640",
+      "city_raw": "RÅDE"
+    },
+    {
+      "name_raw": "COOP PRIX SPERRETORVET",
+      "name_canonical": "prix sperretorvet",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "STORGT. 23",
+      "address_canonical": "storgate 23",
+      "zip": "3210",
+      "city_raw": "SANDEFJORD"
+    },
+    {
+      "name_raw": "COOP PRIX TJØLLING",
+      "name_canonical": "prix tjølling",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "STASJONSVN. 1",
+      "address_canonical": "stasjonsveien 1",
+      "zip": "3280",
+      "city_raw": "TJODALYNG"
+    },
+    {
+      "name_raw": "COOP PRIX TRANBERG",
+      "name_canonical": "prix tranberg",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "PROST BLOMSGT. 28",
+      "address_canonical": "prost blomsgate 28",
+      "zip": "2819",
+      "city_raw": "GJØVIK"
+    },
+    {
+      "name_raw": "COOP PRIX TÅSE",
+      "name_canonical": "prix tase",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "NILS LAURITSSØNSV. 57",
+      "address_canonical": "nils lauritssønsv 57",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX ULLEVÅLSVEIE",
+      "name_canonical": "prix ullevalsveie",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "PILESTREDET PARK 12",
+      "address_canonical": "pilestredet park 12",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX VG-HUSET",
+      "name_canonical": "prix vg huset",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "AKERSGATA 55",
+      "address_canonical": "akersgata 55",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX VOSS",
+      "name_canonical": "prix voss",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "UTTRÅGATA 36",
+      "address_canonical": "uttragata 36",
+      "zip": "5700",
+      "city_raw": "VOSS"
+    },
+    {
+      "name_raw": "COOP PRIX WALDEMAR THRANESGATE",
+      "name_canonical": "prix waldemar thranesgate",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "WALDEMAR THRANESGT. 5",
+      "address_canonical": "waldemar thranesgate 5",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "COOP PRIX ØSTMARKVEIE",
+      "name_canonical": "prix østmarkveie",
+      "chain_raw": "Coop PRIX",
+      "chain_id": "prix",
+      "address_raw": "ØSTMARKVEIEN 2",
+      "address_canonical": "østmarkveien 2",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN ALDERSUND",
+      "name_canonical": "matkroken aldersund",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ALDERSUNDVEIEN 408",
+      "address_canonical": "aldersundveien 408",
+      "zip": "8730",
+      "city_raw": "BRATLAND"
+    },
+    {
+      "name_raw": "MATKROKEN ALPI",
+      "name_canonical": "matkroken alpi",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "HOLLESKARDVEGEN 49",
+      "address_canonical": "holleskardvegen 49",
+      "zip": "3560",
+      "city_raw": "HEMSEDAL"
+    },
+    {
+      "name_raw": "MATKROKEN ATNA",
+      "name_canonical": "matkroken atna",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ATNEOSVEIEN 95",
+      "address_canonical": "atneosveien 95",
+      "zip": "2476",
+      "city_raw": "ATNA"
+    },
+    {
+      "name_raw": "MATKROKEN BESSAKER",
+      "name_canonical": "matkroken bessaker",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "BESSAKERSJØVEIEN 37",
+      "address_canonical": "bessakersjøveien 37",
+      "zip": "7190",
+      "city_raw": "BESSAKER"
+    },
+    {
+      "name_raw": "MATKROKEN BLEKE",
+      "name_canonical": "matkroken bleke",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "BLEKENBERG 6-10",
+      "address_canonical": "blekenberg 6 10",
+      "zip": "5055",
+      "city_raw": "BERGEN"
+    },
+    {
+      "name_raw": "MATKROKEN BRÅTE",
+      "name_canonical": "matkroken brate",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "EKEBERGVEIEN 195",
+      "address_canonical": "ekebergveien 195",
+      "zip": "1162",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN BYGLAND",
+      "name_canonical": "matkroken bygland",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "SETESDALSVEGEN 2218",
+      "address_canonical": "setesdalsvegen 2218",
+      "zip": "4745",
+      "city_raw": "BYGLAND"
+    },
+    {
+      "name_raw": "MATKROKEN BÆVERFJORD",
+      "name_canonical": "matkroken bæverfjord",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ASSKARDVEGEN 1324",
+      "address_canonical": "asskardvegen 1324",
+      "zip": "6644",
+      "city_raw": "BÆVERFJORD"
+    },
+    {
+      "name_raw": "MATKROKEN CITY SKIE",
+      "name_canonical": "matkroken city skie",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KONGENS GATE 18",
+      "address_canonical": "kongens gate 18",
+      "zip": "3717",
+      "city_raw": "SKIEN"
+    },
+    {
+      "name_raw": "MATKROKEN DALSØYRA",
+      "name_canonical": "matkroken dalsøyra",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "GULAFJORDVEGEN",
+      "address_canonical": "gulafjordvegen",
+      "zip": "5960",
+      "city_raw": "DALSØYRA"
+    },
+    {
+      "name_raw": "MATKROKEN DRØBAK",
+      "name_canonical": "matkroken drøbak",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KIRKEGATEN 9",
+      "address_canonical": "kirkegaten 9",
+      "zip": "1440",
+      "city_raw": "DRØBAK"
+    },
+    {
+      "name_raw": "MATKROKEN ETNEDAL",
+      "name_canonical": "matkroken etnedal",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ETNEDALSVEGEN 1212",
+      "address_canonical": "etnedalsvegen 1212",
+      "zip": "2890",
+      "city_raw": "ETNEDAL"
+    },
+    {
+      "name_raw": "MATKROKEN FEDJE",
+      "name_canonical": "matkroken fedje",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "MUREN 1",
+      "address_canonical": "muren 1",
+      "zip": "5947",
+      "city_raw": "FEDJE"
+    },
+    {
+      "name_raw": "MATKROKEN FRIDTJOF NANSENS PLASS",
+      "name_canonical": "matkroken fridtjof nansens plass",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "FRIDTJOF NANSENS PLASS 6",
+      "address_canonical": "fridtjof nansens plass 6",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN GJESVÆR",
+      "name_canonical": "matkroken gjesvær",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "WALSØENESVEGEN 13",
+      "address_canonical": "walsøenesvegen 13",
+      "zip": "9765",
+      "city_raw": "GJESVÆR"
+    },
+    {
+      "name_raw": "MATKROKEN GRANSHERAD",
+      "name_canonical": "matkroken gransherad",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "GRANSHERADVEGEN 1043",
+      "address_canonical": "gransheradvegen 1043",
+      "zip": "3691",
+      "city_raw": "GRANSHERAD"
+    },
+    {
+      "name_raw": "MATKROKEN GROVFJORD",
+      "name_canonical": "matkroken grovfjord",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "SJØVOLLEN",
+      "address_canonical": "sjøvollen",
+      "zip": "9446",
+      "city_raw": "GROVFJORD"
+    },
+    {
+      "name_raw": "MATKROKEN GRYLLEFJORD",
+      "name_canonical": "matkroken gryllefjord",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "9380",
+      "city_raw": "GRYLLEFJORD"
+    },
+    {
+      "name_raw": "MATKROKEN HANSNES",
+      "name_canonical": "matkroken hansnes",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "9130",
+      "city_raw": "HANSNES"
+    },
+    {
+      "name_raw": "MATKROKEN HJELMÅS",
+      "name_canonical": "matkroken hjelmas",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "LEKNESVEGEN 389",
+      "address_canonical": "leknesvegen 389",
+      "zip": "5915",
+      "city_raw": "HJELMÅS"
+    },
+    {
+      "name_raw": "MATKROKEN HOVI",
+      "name_canonical": "matkroken hovi",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "HOVINVEGEN 1910",
+      "address_canonical": "hovinvegen 1910",
+      "zip": "3652",
+      "city_raw": "HOVIN"
+    },
+    {
+      "name_raw": "MATKROKEN HUK",
+      "name_canonical": "matkroken huk",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "LANGVIKSVEIEN 15",
+      "address_canonical": "langviksveien 15",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN IMSLAND",
+      "name_canonical": "matkroken imsland",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KVALØYVEIEN 74",
+      "address_canonical": "kvaløyveien 74",
+      "zip": "5583",
+      "city_raw": "VIKEDAL"
+    },
+    {
+      "name_raw": "MATKROKEN INDRE ÅRSNES",
+      "name_canonical": "matkroken indre arsnes",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "INDRE ÅRSNES",
+      "address_canonical": "indre arsnes",
+      "zip": "4770",
+      "city_raw": "HØVÅG"
+    },
+    {
+      "name_raw": "MATKROKEN KILSUND",
+      "name_canonical": "matkroken kilsund",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KILSUNDVEIEN 156",
+      "address_canonical": "kilsundveien 156",
+      "zip": "4920",
+      "city_raw": "STAUBØ"
+    },
+    {
+      "name_raw": "MATKROKEN KINGOSGATE",
+      "name_canonical": "matkroken kingosgate",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KINGOSGATE 2B",
+      "address_canonical": "kingosgate 2b",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN KIRKEHAM",
+      "name_canonical": "matkroken kirkeham",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KIRKEHAMNVEIEN 80",
+      "address_canonical": "kirkehamnveien 80",
+      "zip": "4432",
+      "city_raw": "HIDRASUND"
+    },
+    {
+      "name_raw": "MATKROKEN KJØRSVIKBUGE",
+      "name_canonical": "matkroken kjørsvikbuge",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "HEMNEVEGEN",
+      "address_canonical": "hemnevegen",
+      "zip": "6699",
+      "city_raw": "KJØRSVIKBUGEN"
+    },
+    {
+      "name_raw": "MATKROKEN KUNES",
+      "name_canonical": "matkroken kunes",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "9742",
+      "city_raw": "KUNES"
+    },
+    {
+      "name_raw": "MATKROKEN KVALFJORD",
+      "name_canonical": "matkroken kvalfjord",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "9531",
+      "city_raw": "KVALFJORD"
+    },
+    {
+      "name_raw": "MATKROKEN KVELIBUA",
+      "name_canonical": "matkroken kvelibua",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KVELIVEIEN 1135",
+      "address_canonical": "kveliveien 1135",
+      "zip": "7882",
+      "city_raw": "NORDLI"
+    },
+    {
+      "name_raw": "MATKROKEN KVISVIK",
+      "name_canonical": "matkroken kvisvik",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "STABBURSVIKVEGEN 3",
+      "address_canonical": "stabbursvikvegen 3",
+      "zip": "6674",
+      "city_raw": "KVISVIK"
+    },
+    {
+      "name_raw": "MATKROKEN LAKSELVBUKT",
+      "name_canonical": "matkroken lakselvbukt",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "LAKSELVBUKTVEIEN 563",
+      "address_canonical": "lakselvbuktveien 563",
+      "zip": "9045",
+      "city_raw": "LAKSELVBUKT"
+    },
+    {
+      "name_raw": "MATKROKEN LAUKVIK",
+      "name_canonical": "matkroken laukvik",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "LAUKVIKVEIEN 22",
+      "address_canonical": "laukvikveien 22",
+      "zip": "8315",
+      "city_raw": "LAUKVIK"
+    },
+    {
+      "name_raw": "MATKROKEN LIERNE",
+      "name_canonical": "matkroken lierne",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "SANDVIKA",
+      "address_canonical": "sandvika",
+      "zip": "7882",
+      "city_raw": "NORDLI"
+    },
+    {
+      "name_raw": "MATKROKEN LILLESAND",
+      "name_canonical": "matkroken lillesand",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "STRANDGATEN 5",
+      "address_canonical": "strandgaten 5",
+      "zip": "4790",
+      "city_raw": "LILLESAND"
+    },
+    {
+      "name_raw": "MATKROKEN LJABRU",
+      "name_canonical": "matkroken ljabru",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "LJABRUBAKKEN 1",
+      "address_canonical": "ljabrubakken 1",
+      "zip": "1165",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN LURØY",
+      "name_canonical": "matkroken lurøy",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "JEKTVIKVEIEN 1C",
+      "address_canonical": "jektvikveien 1c",
+      "zip": "8766",
+      "city_raw": "LURØY"
+    },
+    {
+      "name_raw": "MATKROKEN MEBYGDA",
+      "name_canonical": "matkroken mebygda",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "MEBYGDA",
+      "address_canonical": "mebygda",
+      "zip": "7884",
+      "city_raw": "SØRLI"
+    },
+    {
+      "name_raw": "MATKROKEN MÅSØY",
+      "name_canonical": "matkroken masøy",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "9692",
+      "city_raw": "MÅSØY"
+    },
+    {
+      "name_raw": "MATKROKEN NORDNESØY",
+      "name_canonical": "matkroken nordnesøy",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "--",
+      "address_canonical": "",
+      "zip": "8198",
+      "city_raw": "NORDNESØY"
+    },
+    {
+      "name_raw": "MATKROKEN PEER GYNT",
+      "name_canonical": "matkroken peer gynt",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KONGSBERGVEIEN 15",
+      "address_canonical": "kongsbergveien 15",
+      "zip": "3681",
+      "city_raw": "NOTODDEN"
+    },
+    {
+      "name_raw": "MATKROKEN RASVÅG",
+      "name_canonical": "matkroken rasvag",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "RASVÅGVEIEN 330",
+      "address_canonical": "rasvagveien 330",
+      "zip": "4432",
+      "city_raw": "HIDRASUND"
+    },
+    {
+      "name_raw": "MATKROKEN REBBENES",
+      "name_canonical": "matkroken rebbenes",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ENGVIK",
+      "address_canonical": "engvik",
+      "zip": "9140",
+      "city_raw": "REBBENES"
+    },
+    {
+      "name_raw": "MATKROKEN ROSSFJORD",
+      "name_canonical": "matkroken rossfjord",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "SULTINDVIKVEIEN 1",
+      "address_canonical": "sultindvikveien 1",
+      "zip": "9302",
+      "city_raw": "ROSSFJORDSTRAUMEN"
+    },
+    {
+      "name_raw": "MATKROKEN RUSSENES",
+      "name_canonical": "matkroken russenes",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "VESTRE PORSANGERVEIEN 6094",
+      "address_canonical": "vestre porsangerveien 6094",
+      "zip": "9713",
+      "city_raw": "RUSSENES"
+    },
+    {
+      "name_raw": "MATKROKEN SAND",
+      "name_canonical": "matkroken sand",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "MALANGSVEIEN 2346",
+      "address_canonical": "malangsveien 2346",
+      "zip": "9056",
+      "city_raw": "MORTENHALS"
+    },
+    {
+      "name_raw": "MATKROKEN SANGNES",
+      "name_canonical": "matkroken sangnes",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "VESTRE TOTENVEI 1229",
+      "address_canonical": "vestre totenvei 1229",
+      "zip": "2846",
+      "city_raw": "BØVERBRU"
+    },
+    {
+      "name_raw": "MATKROKEN SCHWEIGAARDSGATE",
+      "name_canonical": "matkroken schweigaardsgate",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "SCHWEIGAARDS GATE 72",
+      "address_canonical": "schweigaards gate 72",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN SELSØYVIK",
+      "name_canonical": "matkroken selsøyvik",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "SELSØYVIKVEIEN 26",
+      "address_canonical": "selsøyvikveien 26",
+      "zip": "8196",
+      "city_raw": "SELSØYVIK"
+    },
+    {
+      "name_raw": "MATKROKEN SENJAHOPE",
+      "name_canonical": "matkroken senjahope",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "BERG UTLEIEBYGG",
+      "address_canonical": "berg utleiebygg",
+      "zip": "9386",
+      "city_raw": "SENJAHOPEN"
+    },
+    {
+      "name_raw": "MATKROKEN SKEIKAMPE",
+      "name_canonical": "matkroken skeikampe",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "SEGALSTADSETERVEGEN 62B",
+      "address_canonical": "segalstadsetervegen 62b",
+      "zip": "2652",
+      "city_raw": "SVINGVOLL"
+    },
+    {
+      "name_raw": "MATKROKEN SOMMARØY",
+      "name_canonical": "matkroken sommarøy",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "HAMNEVEIEN 16",
+      "address_canonical": "hamneveien 16",
+      "zip": "9110",
+      "city_raw": "SOMMARØY"
+    },
+    {
+      "name_raw": "MATKROKEN STATLAND",
+      "name_canonical": "matkroken statland",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "SJØTRØA 18",
+      "address_canonical": "sjøtrøa 18",
+      "zip": "7777",
+      "city_raw": "NORD-STATLAND"
+    },
+    {
+      "name_raw": "MATKROKEN STEEN&STRØM",
+      "name_canonical": "matkroken steen&strøm",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KONGENSGT. 23",
+      "address_canonical": "kongensgate 23",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN STEINSGRENDA",
+      "name_canonical": "matkroken steinsgrenda",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ØVERVEIEN 208",
+      "address_canonical": "øverveien 208",
+      "zip": "6531",
+      "city_raw": "AVERØY"
+    },
+    {
+      "name_raw": "MATKROKEN STORVIK",
+      "name_canonical": "matkroken storvik",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "STRANDVEIEN 2",
+      "address_canonical": "strandveien 2",
+      "zip": "8145",
+      "city_raw": "STORVIK"
+    },
+    {
+      "name_raw": "MATKROKEN STRØMMEHAVE",
+      "name_canonical": "matkroken strømmehave",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "STRØMMEVEIEN 73M",
+      "address_canonical": "strømmeveien 73m",
+      "zip": "4638",
+      "city_raw": "KRISTIANSAND"
+    },
+    {
+      "name_raw": "MATKROKEN STRØNE",
+      "name_canonical": "matkroken strøne",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "WERNERSHOLMSVEGEN 53",
+      "address_canonical": "wernersholmsvegen 53",
+      "zip": "5232",
+      "city_raw": "PARADIS"
+    },
+    {
+      "name_raw": "MATKROKEN SUNNDALSPORTE",
+      "name_canonical": "matkroken sunndalsporte",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "FJELLGARDSVEGEN 2",
+      "address_canonical": "fjellgardsvegen 2",
+      "zip": "6613",
+      "city_raw": "GJØRA"
+    },
+    {
+      "name_raw": "MATKROKEN SØRE OSE",
+      "name_canonical": "matkroken søre ose",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "OSENSJØEN VEST 11",
+      "address_canonical": "osensjøen vest 11",
+      "zip": "2428",
+      "city_raw": "SØRE OSEN"
+    },
+    {
+      "name_raw": "MATKROKEN SØRSTRAUME",
+      "name_canonical": "matkroken sørstraume",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "9162",
+      "city_raw": "SØRSTRAUMEN"
+    },
+    {
+      "name_raw": "MATKROKEN SØRVÅGE",
+      "name_canonical": "matkroken sørvage",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "MOSKENESVEIEN 903",
+      "address_canonical": "moskenesveien 903",
+      "zip": "8392",
+      "city_raw": "SØRVÅGEN"
+    },
+    {
+      "name_raw": "MATKROKEN TODALE",
+      "name_canonical": "matkroken todale",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "TODALSVEIEN 1354",
+      "address_canonical": "todalsveien 1354",
+      "zip": "6645",
+      "city_raw": "TODALEN"
+    },
+    {
+      "name_raw": "MATKROKEN TRONES",
+      "name_canonical": "matkroken trones",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "FURUVEIEN 4",
+      "address_canonical": "furuveien 4",
+      "zip": "7892",
+      "city_raw": "TRONES"
+    },
+    {
+      "name_raw": "MATKROKEN TROVAT",
+      "name_canonical": "matkroken trovat",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ØYFJELLSVEGEN 892",
+      "address_canonical": "øyfjellsvegen 892",
+      "zip": "3890",
+      "city_raw": "VINJE"
+    },
+    {
+      "name_raw": "MATKROKEN TYLLDALE",
+      "name_canonical": "matkroken tylldale",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "TYLLDALSVEIEN 1975",
+      "address_canonical": "tylldalsveien 1975",
+      "zip": "2510",
+      "city_raw": "TYLLDAL"
+    },
+    {
+      "name_raw": "MATKROKEN ULVE",
+      "name_canonical": "matkroken ulve",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "KARL STAFFSVEI 2-4",
+      "address_canonical": "karl staffsvei 2 4",
+      "zip": "",
+      "city_raw": "OSLO"
+    },
+    {
+      "name_raw": "MATKROKEN ULVSVÅG",
+      "name_canonical": "matkroken ulvsvag",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "8276",
+      "city_raw": "ULVSVÅG"
+    },
+    {
+      "name_raw": "MATKROKEN VANNAREID",
+      "name_canonical": "matkroken vannareid",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "9136",
+      "city_raw": "VANNAREID"
+    },
+    {
+      "name_raw": "MATKROKEN VEGSUND",
+      "name_canonical": "matkroken vegsund",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "VEGSUNDVEGEN 25",
+      "address_canonical": "vegsundvegen 25",
+      "zip": "6020",
+      "city_raw": "ÅLESUND"
+    },
+    {
+      "name_raw": "MATKROKEN VENGSØY",
+      "name_canonical": "matkroken vengsøy",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "VENGSØYA 97",
+      "address_canonical": "vengsøya 97",
+      "zip": "9120",
+      "city_raw": "VENGSØY"
+    },
+    {
+      "name_raw": "MATKROKEN VESTBYGD",
+      "name_canonical": "matkroken vestbygd",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "OFFERSØY",
+      "address_canonical": "offersøy",
+      "zip": "8412",
+      "city_raw": "VESTBYGD"
+    },
+    {
+      "name_raw": "MATKROKEN VISTHUS",
+      "name_canonical": "matkroken visthus",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "VISTHUSVEIEN 56",
+      "address_canonical": "visthusveien 56",
+      "zip": "8870",
+      "city_raw": "VISTHUS"
+    },
+    {
+      "name_raw": "MATKROKEN ÅNSTAD",
+      "name_canonical": "matkroken anstad",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ANDØRJAVEIEN 452",
+      "address_canonical": "andørjaveien 452",
+      "zip": "9454",
+      "city_raw": "ÅNSTAD"
+    },
+    {
+      "name_raw": "MATKROKEN ÅRVIKSAND",
+      "name_canonical": "matkroken arviksand",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "-",
+      "address_canonical": "",
+      "zip": "9195",
+      "city_raw": "ÅRVIKSAND"
+    },
+    {
+      "name_raw": "MATKROKEN ÅSE",
+      "name_canonical": "matkroken ase",
+      "chain_raw": "Matkroken",
+      "chain_id": "",
+      "address_raw": "ÅSE",
+      "address_canonical": "ase",
+      "zip": "8484",
+      "city_raw": "RISØYHAMN"
+    }
+  ]
+}

@@ -8,6 +8,7 @@ const CACHE_DIR = path.resolve(__dirname, '..', '.cache')
 const CACHE_PATH = path.resolve(CACHE_DIR, 'coop_store_cache.json')
 const MATCH_REPORT_PATH = path.resolve(CACHE_DIR, 'samvirkelag-match-report.json')
 const SAMVIRKELAG_RULES_PATH = path.resolve(__dirname, '..', 'config', 'samvirkelag-rules.json')
+const NBAS_REFERENCE_PATH = path.resolve(__dirname, '..', 'config', 'nbas-store-reference.json')
 const SAMVIRKELAG_RULES_PUBLIC_PATH = path.resolve(__dirname, '..', 'public', 'samvirkelag-rules.json')
 
 const USER_AGENT = 'Norgeskart Coop store scraper (educational use)'
@@ -66,12 +67,29 @@ function extractZipFromAddress(value) {
   return match ? match[1] : ''
 }
 
+function canonicalizeAddress(value) {
+  let next = normalizeForCompare(value)
+  next = stripDiacritics(next)
+  next = next
+    .replace(/\bgt\.\b/g, 'gate')
+    .replace(/\bgt\b/g, 'gate')
+    .replace(/\bvn\.\b/g, 'veien')
+    .replace(/\bvn\b/g, 'veien')
+  next = next.replace(/[.,/\\-]/g, ' ')
+  return next.replace(/\s+/g, ' ').trim()
+}
+
+function addressTokens(value) {
+  return canonicalizeAddress(value)
+    .split(' ')
+    .map((token) => token.trim())
+    .filter((token) => token.length > 1 && /[a-z0-9]/.test(token))
+}
+
 function loadSamvirkelagRules() {
   if (!fs.existsSync(SAMVIRKELAG_RULES_PATH)) {
     return {
       norskButikkdriftLabel: 'Norsk Butikkdrift',
-      nbasExactSet: new Set(),
-      nbasCanonicalByChain: new Map(),
       samvirkelagWhitelistMap: new Map(),
     }
   }
@@ -83,26 +101,6 @@ function loadSamvirkelagRules() {
         ? parsed.norskButikkdriftLabel.trim()
         : 'Norsk Butikkdrift'
 
-    const nbasExactSet = new Set()
-    const nbasCanonicalByChain = new Map()
-    if (Array.isArray(parsed?.nbasStoreNames)) {
-      parsed.nbasStoreNames.forEach((value) => {
-        const raw = String(value || '').trim()
-        if (!raw) return
-
-        const exact = normalizeForCompare(raw)
-        if (exact) nbasExactSet.add(exact)
-
-        const inferredChain = inferChainFromName(raw)
-        const canonical = canonicalizeStoreName(raw)
-        if (!canonical) return
-        const key = `${inferredChain || 'any'}|${canonical}`
-        const list = nbasCanonicalByChain.get(key) || []
-        list.push(raw)
-        nbasCanonicalByChain.set(key, list)
-      })
-    }
-
     const samvirkelagWhitelistMap = new Map()
     if (Array.isArray(parsed?.samvirkelagWhitelist)) {
       parsed.samvirkelagWhitelist.forEach((value) => {
@@ -112,19 +110,66 @@ function loadSamvirkelagRules() {
       })
     }
 
-    return { norskButikkdriftLabel, nbasExactSet, nbasCanonicalByChain, samvirkelagWhitelistMap }
+    return { norskButikkdriftLabel, samvirkelagWhitelistMap }
   } catch (error) {
     console.warn(`Could not read ${SAMVIRKELAG_RULES_PATH}: ${error.message || error}`)
     return {
       norskButikkdriftLabel: 'Norsk Butikkdrift',
-      nbasExactSet: new Set(),
-      nbasCanonicalByChain: new Map(),
       samvirkelagWhitelistMap: new Map(),
     }
   }
 }
 
 const SAMVIRKELAG_RULES = loadSamvirkelagRules()
+
+function loadNbasReference() {
+  if (!fs.existsSync(NBAS_REFERENCE_PATH)) {
+    return {
+      records: [],
+      byChainZip: new Map(),
+    }
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(NBAS_REFERENCE_PATH, 'utf8'))
+    const records = Array.isArray(parsed?.records) ? parsed.records : []
+    const normalized = records
+      .map((row) => {
+        const chainId = normalizeChainId(String(row.chain_id || row.chain_raw || '')) || inferChainFromName(String(row.name_raw || ''))
+        const zip = String(row.zip || '').trim()
+        const nameCanonical = canonicalizeStoreName(String(row.name_canonical || row.name_raw || ''))
+        const addressCanonical = canonicalizeAddress(String(row.address_canonical || row.address_raw || ''))
+        return {
+          name_raw: String(row.name_raw || ''),
+          address_raw: String(row.address_raw || ''),
+          chain_id: chainId,
+          zip,
+          name_canonical: nameCanonical,
+          address_canonical: addressCanonical,
+          address_tokens: addressTokens(String(row.address_raw || row.address_canonical || '')),
+        }
+      })
+      .filter((row) => row.chain_id && row.zip)
+
+    const byChainZip = new Map()
+    normalized.forEach((row) => {
+      const key = `${row.chain_id}|${row.zip}`
+      const list = byChainZip.get(key) || []
+      list.push(row)
+      byChainZip.set(key, list)
+    })
+
+    return { records: normalized, byChainZip }
+  } catch (error) {
+    console.warn(`Could not read ${NBAS_REFERENCE_PATH}: ${error.message || error}`)
+    return {
+      records: [],
+      byChainZip: new Map(),
+    }
+  }
+}
+
+const NBAS_REFERENCE = loadNbasReference()
 
 function syncSamvirkelagRulesToPublic() {
   if (!fs.existsSync(SAMVIRKELAG_RULES_PATH)) return
@@ -138,49 +183,83 @@ function classifySamvirkelag(details, report) {
     return SAMVIRKELAG_RULES.samvirkelagWhitelistMap.get(normalizedSamvirkelag)
   }
 
-  const normalizedName = normalizeForCompare(name)
-  if (normalizedName && SAMVIRKELAG_RULES.nbasExactSet.has(normalizedName)) {
-    report.matched_by_exact += 1
+  const normalizedChain = normalizeChainId(String(chain || '')) || inferChainFromName(name)
+  const zip = extractZipFromAddress(address)
+  if (!normalizedChain || !zip) {
+    report.unmatched_total += 1
+    return String(samvirkelagRaw || '').trim() || 'Ukjent'
+  }
+
+  const chainZipCandidates = NBAS_REFERENCE.byChainZip.get(`${normalizedChain}|${zip}`) || []
+  if (!chainZipCandidates.length) {
+    report.unmatched_total += 1
+    return String(samvirkelagRaw || '').trim() || 'Ukjent'
+  }
+
+  const nameCanonical = canonicalizeStoreName(name)
+  const addressCanonical = canonicalizeAddress(address)
+  const scrapedAddressTokens = new Set(addressTokens(address))
+
+  const exactNameCandidates = chainZipCandidates.filter(
+    (candidate) => candidate.name_canonical && candidate.name_canonical === nameCanonical,
+  )
+  if (exactNameCandidates.length === 1) {
+    report.matched_by_chain_zip_name += 1
     return SAMVIRKELAG_RULES.norskButikkdriftLabel
   }
 
-  const canonical = canonicalizeStoreName(name)
-  if (canonical) {
-    const byChainKey = `${chain || 'any'}|${canonical}`
-    const anyChainKey = `any|${canonical}`
-    const candidates = [
-      ...(SAMVIRKELAG_RULES.nbasCanonicalByChain.get(byChainKey) || []),
-      ...(SAMVIRKELAG_RULES.nbasCanonicalByChain.get(anyChainKey) || []),
-    ]
-
-    if (candidates.length === 1) {
-      report.matched_by_canonical += 1
-      return SAMVIRKELAG_RULES.norskButikkdriftLabel
-    }
-
-    if (candidates.length > 1) {
-      const zip = extractZipFromAddress(address)
-      if (zip) {
-        const zipCandidates = candidates.filter((candidate) => candidate.includes(zip))
-        if (zipCandidates.length === 1) {
-          report.matched_by_zip_fallback += 1
-          return SAMVIRKELAG_RULES.norskButikkdriftLabel
-        }
-      }
-
-      report.ambiguous_unresolved += 1
-      if (report.unresolved_samples.length < 20) {
-        report.unresolved_samples.push({
-          store: name,
-          chain: chain || '',
-          address: address || '',
-          candidates: candidates.slice(0, 5),
-        })
-      }
-    }
+  const exactAddressCandidates = chainZipCandidates.filter(
+    (candidate) => candidate.address_canonical && candidate.address_canonical === addressCanonical,
+  )
+  if (exactAddressCandidates.length === 1) {
+    report.matched_by_chain_zip_address += 1
+    return SAMVIRKELAG_RULES.norskButikkdriftLabel
   }
 
-  report.unmatched_total += 1
+  const prefixCandidates = chainZipCandidates.filter((candidate) => {
+    if (!candidate.name_canonical || !nameCanonical) return false
+    return (
+      candidate.name_canonical.startsWith(nameCanonical) ||
+      nameCanonical.startsWith(candidate.name_canonical)
+    )
+  })
+  if (prefixCandidates.length === 1) {
+    report.matched_by_name_prefix_fallback += 1
+    return SAMVIRKELAG_RULES.norskButikkdriftLabel
+  }
+
+  let bestCandidate = null
+  let bestScore = 0
+  let duplicateBest = false
+  chainZipCandidates.forEach((candidate) => {
+    const score = candidate.address_tokens.reduce(
+      (acc, token) => (scrapedAddressTokens.has(token) ? acc + 1 : acc),
+      0,
+    )
+    if (score > bestScore) {
+      bestScore = score
+      bestCandidate = candidate
+      duplicateBest = false
+    } else if (score === bestScore && score > 0) {
+      duplicateBest = true
+    }
+  })
+  if (bestCandidate && bestScore >= 2 && !duplicateBest) {
+    report.matched_by_address_token_fallback += 1
+    return SAMVIRKELAG_RULES.norskButikkdriftLabel
+  }
+
+  report.ambiguous_unresolved += 1
+  if (report.unresolved_samples.length < 20) {
+    report.unresolved_samples.push({
+      store: name,
+      chain: normalizedChain,
+      zip,
+      address: address || '',
+      candidate_count: chainZipCandidates.length,
+      candidates: chainZipCandidates.slice(0, 5).map((candidate) => candidate.name_raw),
+    })
+  }
   return String(samvirkelagRaw || '').trim() || 'Ukjent'
 }
 
@@ -492,9 +571,10 @@ async function run() {
   const features = []
   const tasks = []
   const matchReport = {
-    matched_by_exact: 0,
-    matched_by_canonical: 0,
-    matched_by_zip_fallback: 0,
+    matched_by_chain_zip_name: 0,
+    matched_by_chain_zip_address: 0,
+    matched_by_name_prefix_fallback: 0,
+    matched_by_address_token_fallback: 0,
     ambiguous_unresolved: 0,
     unmatched_total: 0,
     unresolved_samples: [],
@@ -520,7 +600,21 @@ async function run() {
 
     try {
       if (cache[current.url]) {
-        features.push(cache[current.url])
+        const cachedFeature = cache[current.url]
+        const props = cachedFeature?.properties || {}
+        const coords = cachedFeature?.geometry?.coordinates || []
+        const finalDetails = {
+          name: String(props.name || current.name || ''),
+          address: String(props.address || current.address || ''),
+          chain: String(props.chain || current.chain || ''),
+          samvirkelag: String(props.samvirkelag || current.samvirkelag || ''),
+          url: String(props.source || current.url || ''),
+          latitude: Number(coords[1]),
+          longitude: Number(coords[0]),
+        }
+        const recalcFeature = toFeature(finalDetails, matchReport)
+        cache[current.url] = recalcFeature
+        features.push(recalcFeature)
       } else {
         const html = await fetchHtml(current.url)
         const details = extractStoreDetails(html, { id: current.chain, label: current.chain })
@@ -573,7 +667,7 @@ async function run() {
   saveCache(cache)
   fs.writeFileSync(MATCH_REPORT_PATH, JSON.stringify(matchReport, null, 2))
   console.log(
-    `Samvirkelag match report: exact=${matchReport.matched_by_exact}, canonical=${matchReport.matched_by_canonical}, zipFallback=${matchReport.matched_by_zip_fallback}, ambiguous=${matchReport.ambiguous_unresolved}, unmatched=${matchReport.unmatched_total}`,
+    `Samvirkelag match report: chain+zip+name=${matchReport.matched_by_chain_zip_name}, chain+zip+address=${matchReport.matched_by_chain_zip_address}, namePrefix=${matchReport.matched_by_name_prefix_fallback}, addressTokens=${matchReport.matched_by_address_token_fallback}, ambiguous=${matchReport.ambiguous_unresolved}, unmatched=${matchReport.unmatched_total}`,
   )
 }
 
