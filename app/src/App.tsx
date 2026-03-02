@@ -25,6 +25,22 @@ type CoopGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Point, {
   samvirkelag?: string
 }>
 
+type SamvirkelagRules = {
+  norskButikkdriftLabel: string
+  nbasStoreNames: string[]
+  samvirkelagWhitelist: string[]
+}
+
+const DEFAULT_SAMVIRKELAG_RULES: SamvirkelagRules = {
+  norskButikkdriftLabel: 'Norsk Butikkdrift',
+  nbasStoreNames: [],
+  samvirkelagWhitelist: [],
+}
+
+const NORSK_BUTIKKDRIFT_AS = 'NORSK BUTIKKDRIFT AS'
+const NBD_ALL_VALUE = '__NBD_ALL__'
+const NBD_CHILD_PREFIX = '__NBD_CHILD__::'
+
 const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty'
 const NORWAY_CENTER: [number, number] = [10.7522, 59.9139]
 const CHAIN_OPTIONS = [
@@ -141,11 +157,34 @@ async function loadCoopStoresGeoJSON(): Promise<CoopGeoJSON> {
   return (await response.json()) as CoopGeoJSON
 }
 
+async function loadSamvirkelagRules(): Promise<SamvirkelagRules> {
+  try {
+    const response = await fetch('/samvirkelag-rules.json')
+    if (!response.ok) return DEFAULT_SAMVIRKELAG_RULES
+    const parsed = (await response.json()) as Partial<SamvirkelagRules>
+    return {
+      norskButikkdriftLabel: parsed.norskButikkdriftLabel || DEFAULT_SAMVIRKELAG_RULES.norskButikkdriftLabel,
+      nbasStoreNames: Array.isArray(parsed.nbasStoreNames) ? parsed.nbasStoreNames : [],
+      samvirkelagWhitelist: Array.isArray(parsed.samvirkelagWhitelist) ? parsed.samvirkelagWhitelist : [],
+    }
+  } catch {
+    return DEFAULT_SAMVIRKELAG_RULES
+  }
+}
+
+function normalizeForCompare(value: string | undefined) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('nb-NO')
+}
+
 function App() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const validPostnummerSetRef = useRef<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const samvirkelagMenuRef = useRef<HTMLDivElement | null>(null)
 
   const [highlightedPostalcodes, setHighlightedPostalcodes] = useState<Set<string>>(new Set())
   const [isLoadingPostal, setIsLoadingPostal] = useState(true)
@@ -162,13 +201,103 @@ function App() {
     obs: true,
     obsbygg: true,
   }))
-  const [samvirkelagOptions, setSamvirkelagOptions] = useState<string[]>([])
+  const [coopStores, setCoopStores] = useState<CoopGeoJSON | null>(null)
+  const [samvirkelagRules, setSamvirkelagRules] = useState<SamvirkelagRules>(DEFAULT_SAMVIRKELAG_RULES)
   const [selectedSamvirkelag, setSelectedSamvirkelag] = useState('Alle')
   const [storeSearch, setStoreSearch] = useState('')
   const [samvirkelagSearch, setSamvirkelagSearch] = useState('')
-  const coopStoresRef = useRef<CoopGeoJSON | null>(null)
+  const [isSamvirkelagMenuOpen, setIsSamvirkelagMenuOpen] = useState(false)
+  const [isNbdExpanded, setIsNbdExpanded] = useState(false)
 
   const highlightedCount = useMemo(() => highlightedPostalcodes.size, [highlightedPostalcodes])
+  const normalizedWhitelistSet = useMemo(
+    () => new Set(samvirkelagRules.samvirkelagWhitelist.map((value) => normalizeForCompare(value))),
+    [samvirkelagRules.samvirkelagWhitelist],
+  )
+  const normalizedNbasNameSet = useMemo(
+    () => new Set(samvirkelagRules.nbasStoreNames.map((value) => normalizeForCompare(value))),
+    [samvirkelagRules.nbasStoreNames],
+  )
+  const normalizedNbdLabel = useMemo(
+    () => normalizeForCompare(samvirkelagRules.norskButikkdriftLabel),
+    [samvirkelagRules.norskButikkdriftLabel],
+  )
+
+  const isNbdStore = (props: CoopGeoJSON['features'][number]['properties']) => {
+    const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
+    const name = props?.name ? String(props.name) : ''
+    const normalizedSamvirkelag = normalizeForCompare(samvirkelag)
+    const normalizedName = normalizeForCompare(name)
+
+    if (normalizedWhitelistSet.has(normalizedSamvirkelag)) return false
+    if (normalizedSamvirkelag === normalizeForCompare(NORSK_BUTIKKDRIFT_AS)) return true
+    if (normalizedSamvirkelag === normalizedNbdLabel) return true
+    return normalizedNbasNameSet.has(normalizedName)
+  }
+
+  const matchesSelectedSamvirkelag = (props: CoopGeoJSON['features'][number]['properties']) => {
+    if (selectedSamvirkelag === 'Alle') return true
+    if (selectedSamvirkelag === NBD_ALL_VALUE) return isNbdStore(props)
+    if (selectedSamvirkelag.startsWith(NBD_CHILD_PREFIX)) {
+      const childValue = selectedSamvirkelag.slice(NBD_CHILD_PREFIX.length)
+      const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
+      return isNbdStore(props) && samvirkelag === childValue
+    }
+    const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
+    return samvirkelag === selectedSamvirkelag
+  }
+
+  const samvirkelagMenuData = useMemo(() => {
+    const allRegular = new Set<string>()
+    const nbdChildren = new Set<string>()
+
+    if (coopStores) {
+      coopStores.features.forEach((feature) => {
+        const props = feature.properties || {}
+        const samvirkelag = props.samvirkelag ? String(props.samvirkelag) : ''
+        if (!samvirkelag) return
+
+        if (isNbdStore(props)) {
+          const normalizedSam = normalizeForCompare(samvirkelag)
+          if (
+            normalizedSam !== normalizeForCompare(NORSK_BUTIKKDRIFT_AS) &&
+            normalizedSam !== normalizedNbdLabel
+          ) {
+            nbdChildren.add(samvirkelag)
+          }
+          return
+        }
+
+        allRegular.add(samvirkelag)
+      })
+    }
+
+    const query = samvirkelagSearch.trim().toLowerCase()
+    const regularOptions = Array.from(allRegular).sort((a, b) => a.localeCompare(b, 'nb'))
+    const nbdChildOptions = Array.from(nbdChildren).sort((a, b) => a.localeCompare(b, 'nb'))
+
+    if (!query) {
+      return { regularOptions, nbdChildOptions }
+    }
+
+    const filteredRegular = regularOptions.filter((value) => value.toLowerCase().includes(query))
+    const filteredChildren = nbdChildOptions.filter((value) => value.toLowerCase().includes(query))
+    const parentMatches = samvirkelagRules.norskButikkdriftLabel.toLowerCase().includes(query)
+
+    return {
+      regularOptions: filteredRegular,
+      nbdChildOptions: parentMatches ? nbdChildOptions : filteredChildren,
+    }
+  }, [coopStores, isNbdStore, normalizedNbdLabel, samvirkelagRules.norskButikkdriftLabel, samvirkelagSearch])
+
+  const selectedSamvirkelagLabel = useMemo(() => {
+    if (selectedSamvirkelag === 'Alle') return 'Alle'
+    if (selectedSamvirkelag === NBD_ALL_VALUE) return samvirkelagRules.norskButikkdriftLabel
+    if (selectedSamvirkelag.startsWith(NBD_CHILD_PREFIX)) {
+      return `${samvirkelagRules.norskButikkdriftLabel} / ${selectedSamvirkelag.slice(NBD_CHILD_PREFIX.length)}`
+    }
+    return selectedSamvirkelag
+  }, [samvirkelagRules.norskButikkdriftLabel, selectedSamvirkelag])
 
   const handleChainToggle = (chainId: string) => {
     setActiveChains((prev) => ({
@@ -520,8 +649,10 @@ function App() {
       }
 
       try {
+        const rules = await loadSamvirkelagRules()
+        setSamvirkelagRules(rules)
         const coopData = await loadCoopStoresGeoJSON()
-        coopStoresRef.current = coopData
+        setCoopStores(coopData)
         if (!map.getSource('coopPrixStores')) {
           map.addSource('coopPrixStores', {
             type: 'geojson',
@@ -587,13 +718,6 @@ function App() {
           `
           popup.setLngLat(coordinates as [number, number]).setHTML(content).addTo(map)
         })
-
-        const samvirkelagSet = new Set<string>()
-        coopData.features.forEach((feature) => {
-          const value = feature.properties?.samvirkelag
-          if (value) samvirkelagSet.add(value)
-        })
-        setSamvirkelagOptions(Array.from(samvirkelagSet).sort())
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Ukjent feil ved lasting av butikker'
         setCoopLoadError(message)
@@ -618,10 +742,23 @@ function App() {
   }, [highlightedPostalcodes])
 
   useEffect(() => {
+    if (!isSamvirkelagMenuOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!samvirkelagMenuRef.current) return
+      if (samvirkelagMenuRef.current.contains(event.target as Node)) return
+      setIsSamvirkelagMenuOpen(false)
+    }
+
+    window.addEventListener('mousedown', handleClickOutside)
+    return () => window.removeEventListener('mousedown', handleClickOutside)
+  }, [isSamvirkelagMenuOpen])
+
+  useEffect(() => {
     const map = mapRef.current
     if (!map || !map.getLayer('coop-pins')) return
 
-    const baseData = coopStoresRef.current
+    const baseData = coopStores
     if (!baseData) return
 
     const enabledChains = CHAIN_OPTIONS.filter((option) => activeChains[option.id]).map(
@@ -632,13 +769,12 @@ function App() {
     const filtered = baseData.features.filter((feature) => {
       const props = feature.properties || {}
       const chain = props.chain || ''
-      const samvirkelag = props.samvirkelag || ''
       const name = props.name || ''
       const address = props.address || ''
 
-    if (enabledChains.length === 0) return false
-    if (!enabledChains.includes(chain)) return false
-      if (selectedSamvirkelag !== 'Alle' && samvirkelag !== selectedSamvirkelag) return false
+      if (enabledChains.length === 0) return false
+      if (!enabledChains.includes(chain)) return false
+      if (!matchesSelectedSamvirkelag(props)) return false
       if (searchLower) {
         const haystack = `${name} ${address}`.toLowerCase()
         if (!haystack.includes(searchLower)) return false
@@ -650,22 +786,10 @@ function App() {
     if (source && 'setData' in source) {
       ;(source as GeoJSONSource).setData({ type: 'FeatureCollection', features: filtered })
     }
-  }, [activeChains, selectedSamvirkelag, storeSearch])
-
-  const filteredSamvirkelagOptions = useMemo(() => {
-    const query = samvirkelagSearch.trim().toLowerCase()
-    if (!query) return samvirkelagOptions
-    return samvirkelagOptions.filter((option) => option.toLowerCase().includes(query))
-  }, [samvirkelagOptions, samvirkelagSearch])
-
-  const samvirkelagSuggestions = useMemo(() => {
-    const query = samvirkelagSearch.trim().toLowerCase()
-    if (!query) return []
-    return filteredSamvirkelagOptions.slice(0, 8)
-  }, [filteredSamvirkelagOptions, samvirkelagSearch])
+  }, [activeChains, coopStores, matchesSelectedSamvirkelag, storeSearch])
 
   const storeSuggestions = useMemo(() => {
-    const baseData = coopStoresRef.current
+    const baseData = coopStores
     const query = storeSearch.trim().toLowerCase()
     if (!baseData || !query) return []
 
@@ -676,17 +800,17 @@ function App() {
     const matches = baseData.features.filter((feature) => {
       const props = feature.properties || {}
       const chain = props.chain || ''
-      const samvirkelag = props.samvirkelag || ''
       const name = props.name || ''
       const address = props.address || ''
       if (enabledChains.length && !enabledChains.includes(chain)) return false
-      if (selectedSamvirkelag !== 'Alle' && samvirkelag !== selectedSamvirkelag) return false
+      if (!matchesSelectedSamvirkelag(props)) return false
+      const samvirkelag = props.samvirkelag || ''
       const haystack = `${name} ${address} ${samvirkelag}`.toLowerCase()
       return haystack.includes(query)
     })
 
     return matches.slice(0, 8)
-  }, [activeChains, selectedSamvirkelag, storeSearch])
+  }, [activeChains, coopStores, matchesSelectedSamvirkelag, storeSearch])
 
   const handleSelectStore = (feature: CoopGeoJSON['features'][number]) => {
     const map = mapRef.current
@@ -787,10 +911,10 @@ function App() {
               </div>
             )}
           </div>
-          <label className="section-label" htmlFor="samvirkelag-select">
+          <label className="section-label" htmlFor="samvirkelag-search">
             Samvirkelag
           </label>
-          <div className="search-wrapper">
+          <div className="search-wrapper samvirkelag-menu" ref={samvirkelagMenuRef}>
             <input
               id="samvirkelag-search"
               className="select-input"
@@ -799,37 +923,80 @@ function App() {
               onChange={(event) => setSamvirkelagSearch(event.target.value)}
               placeholder="Søk samvirkelag"
             />
-            {samvirkelagSearch.trim() && (
-              <div className="search-suggestions">
-                {samvirkelagSuggestions.length === 0 && (
-                  <div className="search-empty">Ingen treff.</div>
-                )}
-                {samvirkelagSuggestions.map((option) => (
+            <button
+              type="button"
+              className="select-input samvirkelag-trigger"
+              onClick={() => setIsSamvirkelagMenuOpen((prev) => !prev)}
+            >
+              <span>{selectedSamvirkelagLabel}</span>
+              <span aria-hidden="true">▾</span>
+            </button>
+            {isSamvirkelagMenuOpen && (
+              <div className="samvirkelag-dropdown">
+                <button
+                  type="button"
+                  className={`samvirkelag-option ${selectedSamvirkelag === 'Alle' ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedSamvirkelag('Alle')
+                    setIsSamvirkelagMenuOpen(false)
+                  }}
+                >
+                  Alle
+                </button>
+
+                {samvirkelagMenuData.regularOptions.map((option) => (
                   <button
                     key={option}
                     type="button"
-                    className="search-card"
-                    onClick={() => setSelectedSamvirkelag(option)}
+                    className={`samvirkelag-option ${selectedSamvirkelag === option ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedSamvirkelag(option)
+                      setIsSamvirkelagMenuOpen(false)
+                    }}
                   >
-                    <div className="search-card-title">{option}</div>
+                    {option}
                   </button>
                 ))}
+
+                {(samvirkelagMenuData.nbdChildOptions.length > 0 ||
+                  samvirkelagRules.norskButikkdriftLabel.toLowerCase().includes(samvirkelagSearch.trim().toLowerCase())) && (
+                  <div className="samvirkelag-group">
+                    <button
+                      type="button"
+                      className={`samvirkelag-option samvirkelag-group-parent ${selectedSamvirkelag === NBD_ALL_VALUE ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedSamvirkelag(NBD_ALL_VALUE)
+                        setIsNbdExpanded((prev) => !prev)
+                      }}
+                    >
+                      <span>{samvirkelagRules.norskButikkdriftLabel}</span>
+                      <span aria-hidden="true">{isNbdExpanded ? '▾' : '▸'}</span>
+                    </button>
+                    {isNbdExpanded && (
+                      <div className="samvirkelag-group-children">
+                        {samvirkelagMenuData.nbdChildOptions.map((option) => {
+                          const value = `${NBD_CHILD_PREFIX}${option}`
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              className={`samvirkelag-option samvirkelag-child ${selectedSamvirkelag === value ? 'active' : ''}`}
+                              onClick={() => {
+                                setSelectedSamvirkelag(value)
+                                setIsSamvirkelagMenuOpen(false)
+                              }}
+                            >
+                              {option}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
-          <select
-            id="samvirkelag-select"
-            className="select-input"
-            value={selectedSamvirkelag}
-            onChange={(event) => setSelectedSamvirkelag(event.target.value)}
-          >
-            <option value="Alle">Alle</option>
-            {filteredSamvirkelagOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div className="sidebar-section">

@@ -7,6 +7,7 @@ const OUTPUT_PATH = path.resolve(__dirname, '..', 'public', 'coop_stores.geojson
 const CACHE_DIR = path.resolve(__dirname, '..', '.cache')
 const CACHE_PATH = path.resolve(CACHE_DIR, 'coop_store_cache.json')
 const SAMVIRKELAG_RULES_PATH = path.resolve(__dirname, '..', 'config', 'samvirkelag-rules.json')
+const SAMVIRKELAG_RULES_PUBLIC_PATH = path.resolve(__dirname, '..', 'public', 'samvirkelag-rules.json')
 
 const USER_AGENT = 'Norgeskart Coop store scraper (educational use)'
 const MAX_STORES = Number(process.env.COOP_MAX_STORES || 0)
@@ -76,6 +77,11 @@ function loadSamvirkelagRules() {
 }
 
 const SAMVIRKELAG_RULES = loadSamvirkelagRules()
+
+function syncSamvirkelagRulesToPublic() {
+  if (!fs.existsSync(SAMVIRKELAG_RULES_PATH)) return
+  fs.copyFileSync(SAMVIRKELAG_RULES_PATH, SAMVIRKELAG_RULES_PUBLIC_PATH)
+}
 
 function classifySamvirkelag(name, samvirkelagRaw) {
   const normalizedSamvirkelag = normalizeForCompare(samvirkelagRaw)
@@ -374,6 +380,7 @@ async function getStoreLinksForChain(chain) {
 }
 
 async function run() {
+  syncSamvirkelagRulesToPublic()
   console.log('Fetching store list from API...')
   const apiUrl = COOP_API_URL.includes('count=')
     ? COOP_API_URL

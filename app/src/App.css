@@ -271,6 +271,73 @@ body {
   color: #64748b;
 }
 
+.samvirkelag-menu {
+  display: grid;
+  gap: 8px;
+}
+
+.samvirkelag-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.samvirkelag-dropdown {
+  border: 1px solid var(--sand-200);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.samvirkelag-option {
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--ink-700);
+}
+
+.samvirkelag-option:hover {
+  background: #eef2f7;
+}
+
+.samvirkelag-option.active {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.samvirkelag-group {
+  border-top: 1px solid var(--sand-200);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.samvirkelag-group-parent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.samvirkelag-group-children {
+  display: grid;
+  gap: 2px;
+  padding-top: 2px;
+}
+
+.samvirkelag-child {
+  padding-left: 20px;
+  font-size: 0.85rem;
+}
+
 .map-panel {
   flex: 1;
   min-width: 0;
