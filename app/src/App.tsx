@@ -31,8 +31,8 @@ const CHAIN_OPTIONS = [
   { id: 'prix', label: 'Coop Prix', color: '#f9da47' },
   { id: 'extra', label: 'Coop Extra', color: '#eb1907' },
   { id: 'mega', label: 'Coop Mega', color: '#164734' },
-  { id: 'obs', label: 'Obs', color: '#03376a' },
-  { id: 'obsbygg', label: 'Obs Bygg', color: '#ff4d00' },
+  { id: 'obs', label: 'Obs', color: '#004992' },
+  { id: 'obsbygg', label: 'Obs Bygg', color: '#002855' },
 ]
 
 const getChainLabel = (chainId: string) =>
@@ -294,7 +294,8 @@ function App() {
   const handleDownload = () => {
     if (!highlightedPostalcodes.size) return
     const sorted = Array.from(highlightedPostalcodes).sort()
-    const csv = ['postnummer', ...sorted].join('\n')
+    const values = sorted.join(',')
+    const csv = `\uFEFFpostnummer\n"${values}"`
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     saveAs(blob, 'postnummer.csv')
   }
