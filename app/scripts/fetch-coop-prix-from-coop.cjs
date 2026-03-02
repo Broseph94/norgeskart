@@ -6,6 +6,7 @@ const cheerio = require('cheerio')
 const OUTPUT_PATH = path.resolve(__dirname, '..', 'public', 'coop_stores.geojson')
 const CACHE_DIR = path.resolve(__dirname, '..', '.cache')
 const CACHE_PATH = path.resolve(CACHE_DIR, 'coop_store_cache.json')
+const MATCH_REPORT_PATH = path.resolve(CACHE_DIR, 'samvirkelag-match-report.json')
 const SAMVIRKELAG_RULES_PATH = path.resolve(__dirname, '..', 'config', 'samvirkelag-rules.json')
 const SAMVIRKELAG_RULES_PUBLIC_PATH = path.resolve(__dirname, '..', 'public', 'samvirkelag-rules.json')
 
@@ -32,11 +33,45 @@ function normalizeForCompare(value) {
     .toLocaleLowerCase('nb-NO')
 }
 
+function stripDiacritics(value) {
+  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function canonicalizeStoreName(value) {
+  let next = normalizeForCompare(value)
+  next = next.replace(/,\s*nbd[a-z0-9]*$/i, '')
+  next = stripDiacritics(next)
+  next = next
+    .replace(/\bcoop\s+extra\b/g, 'extra')
+    .replace(/\bcoop\s+mega\b/g, 'mega')
+    .replace(/\bcoop\s+prix\b/g, 'prix')
+    .replace(/\bcoop\s+obs\s+bygg\b/g, 'obs bygg')
+    .replace(/\bcoop\s+obs\b/g, 'obs')
+  next = next.replace(/[.,/\\-]/g, ' ')
+  return next.replace(/\s+/g, ' ').trim()
+}
+
+function inferChainFromName(value) {
+  const canonical = canonicalizeStoreName(value)
+  if (canonical.startsWith('extra ')) return 'extra'
+  if (canonical.startsWith('mega ')) return 'mega'
+  if (canonical.startsWith('prix ')) return 'prix'
+  if (canonical.startsWith('obs bygg ')) return 'obsbygg'
+  if (canonical.startsWith('obs ')) return 'obs'
+  return ''
+}
+
+function extractZipFromAddress(value) {
+  const match = String(value || '').match(/\b(\d{4})\b/)
+  return match ? match[1] : ''
+}
+
 function loadSamvirkelagRules() {
   if (!fs.existsSync(SAMVIRKELAG_RULES_PATH)) {
     return {
       norskButikkdriftLabel: 'Norsk Butikkdrift',
-      nbasNameSet: new Set(),
+      nbasExactSet: new Set(),
+      nbasCanonicalByChain: new Map(),
       samvirkelagWhitelistMap: new Map(),
     }
   }
@@ -48,13 +83,25 @@ function loadSamvirkelagRules() {
         ? parsed.norskButikkdriftLabel.trim()
         : 'Norsk Butikkdrift'
 
-    const nbasNameSet = new Set(
-      Array.isArray(parsed?.nbasStoreNames)
-        ? parsed.nbasStoreNames
-            .map((value) => normalizeForCompare(value))
-            .filter(Boolean)
-        : [],
-    )
+    const nbasExactSet = new Set()
+    const nbasCanonicalByChain = new Map()
+    if (Array.isArray(parsed?.nbasStoreNames)) {
+      parsed.nbasStoreNames.forEach((value) => {
+        const raw = String(value || '').trim()
+        if (!raw) return
+
+        const exact = normalizeForCompare(raw)
+        if (exact) nbasExactSet.add(exact)
+
+        const inferredChain = inferChainFromName(raw)
+        const canonical = canonicalizeStoreName(raw)
+        if (!canonical) return
+        const key = `${inferredChain || 'any'}|${canonical}`
+        const list = nbasCanonicalByChain.get(key) || []
+        list.push(raw)
+        nbasCanonicalByChain.set(key, list)
+      })
+    }
 
     const samvirkelagWhitelistMap = new Map()
     if (Array.isArray(parsed?.samvirkelagWhitelist)) {
@@ -65,12 +112,13 @@ function loadSamvirkelagRules() {
       })
     }
 
-    return { norskButikkdriftLabel, nbasNameSet, samvirkelagWhitelistMap }
+    return { norskButikkdriftLabel, nbasExactSet, nbasCanonicalByChain, samvirkelagWhitelistMap }
   } catch (error) {
     console.warn(`Could not read ${SAMVIRKELAG_RULES_PATH}: ${error.message || error}`)
     return {
       norskButikkdriftLabel: 'Norsk Butikkdrift',
-      nbasNameSet: new Set(),
+      nbasExactSet: new Set(),
+      nbasCanonicalByChain: new Map(),
       samvirkelagWhitelistMap: new Map(),
     }
   }
@@ -83,17 +131,56 @@ function syncSamvirkelagRulesToPublic() {
   fs.copyFileSync(SAMVIRKELAG_RULES_PATH, SAMVIRKELAG_RULES_PUBLIC_PATH)
 }
 
-function classifySamvirkelag(name, samvirkelagRaw) {
+function classifySamvirkelag(details, report) {
+  const { name, samvirkelag: samvirkelagRaw, chain, address } = details
   const normalizedSamvirkelag = normalizeForCompare(samvirkelagRaw)
   if (normalizedSamvirkelag && SAMVIRKELAG_RULES.samvirkelagWhitelistMap.has(normalizedSamvirkelag)) {
     return SAMVIRKELAG_RULES.samvirkelagWhitelistMap.get(normalizedSamvirkelag)
   }
 
   const normalizedName = normalizeForCompare(name)
-  if (normalizedName && SAMVIRKELAG_RULES.nbasNameSet.has(normalizedName)) {
+  if (normalizedName && SAMVIRKELAG_RULES.nbasExactSet.has(normalizedName)) {
+    report.matched_by_exact += 1
     return SAMVIRKELAG_RULES.norskButikkdriftLabel
   }
 
+  const canonical = canonicalizeStoreName(name)
+  if (canonical) {
+    const byChainKey = `${chain || 'any'}|${canonical}`
+    const anyChainKey = `any|${canonical}`
+    const candidates = [
+      ...(SAMVIRKELAG_RULES.nbasCanonicalByChain.get(byChainKey) || []),
+      ...(SAMVIRKELAG_RULES.nbasCanonicalByChain.get(anyChainKey) || []),
+    ]
+
+    if (candidates.length === 1) {
+      report.matched_by_canonical += 1
+      return SAMVIRKELAG_RULES.norskButikkdriftLabel
+    }
+
+    if (candidates.length > 1) {
+      const zip = extractZipFromAddress(address)
+      if (zip) {
+        const zipCandidates = candidates.filter((candidate) => candidate.includes(zip))
+        if (zipCandidates.length === 1) {
+          report.matched_by_zip_fallback += 1
+          return SAMVIRKELAG_RULES.norskButikkdriftLabel
+        }
+      }
+
+      report.ambiguous_unresolved += 1
+      if (report.unresolved_samples.length < 20) {
+        report.unresolved_samples.push({
+          store: name,
+          chain: chain || '',
+          address: address || '',
+          candidates: candidates.slice(0, 5),
+        })
+      }
+    }
+  }
+
+  report.unmatched_total += 1
   return String(samvirkelagRaw || '').trim() || 'Ukjent'
 }
 
@@ -294,8 +381,8 @@ function normalizeStoreFromApi(item) {
   }
 }
 
-function toFeature(details) {
-  const classifiedSamvirkelag = classifySamvirkelag(details.name, details.samvirkelag)
+function toFeature(details, report) {
+  const classifiedSamvirkelag = classifySamvirkelag(details, report)
   return {
     type: 'Feature',
     geometry: {
@@ -404,6 +491,14 @@ async function run() {
   const cache = loadCache()
   const features = []
   const tasks = []
+  const matchReport = {
+    matched_by_exact: 0,
+    matched_by_canonical: 0,
+    matched_by_zip_fallback: 0,
+    ambiguous_unresolved: 0,
+    unmatched_total: 0,
+    unresolved_samples: [],
+  }
 
   let count = 0
   for (const store of normalizedStores) {
@@ -445,7 +540,7 @@ async function run() {
             latitude,
             longitude,
           }
-          const feature = toFeature(finalDetails)
+          const feature = toFeature(finalDetails, matchReport)
           cache[current.url] = feature
           features.push(feature)
         }
@@ -475,6 +570,11 @@ async function run() {
 
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(geojson))
   console.log(`Wrote ${features.length} Coop store features to ${OUTPUT_PATH}`)
+  saveCache(cache)
+  fs.writeFileSync(MATCH_REPORT_PATH, JSON.stringify(matchReport, null, 2))
+  console.log(
+    `Samvirkelag match report: exact=${matchReport.matched_by_exact}, canonical=${matchReport.matched_by_canonical}, zipFallback=${matchReport.matched_by_zip_fallback}, ambiguous=${matchReport.ambiguous_unresolved}, unmatched=${matchReport.unmatched_total}`,
+  )
 }
 
 run().catch((error) => {
