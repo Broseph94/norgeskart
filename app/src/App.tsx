@@ -179,6 +179,24 @@ function normalizeForCompare(value: string | undefined) {
     .toLocaleLowerCase('nb-NO')
 }
 
+function stripDiacritics(value: string) {
+  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function canonicalizeStoreName(value: string | undefined) {
+  let next = normalizeForCompare(value)
+  next = next.replace(/,\s*nbd[a-z0-9]*$/i, '')
+  next = stripDiacritics(next)
+  next = next
+    .replace(/\bcoop\s+extra\b/g, 'extra')
+    .replace(/\bcoop\s+mega\b/g, 'mega')
+    .replace(/\bcoop\s+prix\b/g, 'prix')
+    .replace(/\bcoop\s+obs\s+bygg\b/g, 'obs bygg')
+    .replace(/\bcoop\s+obs\b/g, 'obs')
+  next = next.replace(/[.,/\\-]/g, ' ')
+  return next.replace(/\s+/g, ' ').trim()
+}
+
 function App() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
@@ -215,7 +233,7 @@ function App() {
     [samvirkelagRules.samvirkelagWhitelist],
   )
   const normalizedNbasNameSet = useMemo(
-    () => new Set(samvirkelagRules.nbasStoreNames.map((value) => normalizeForCompare(value))),
+    () => new Set(samvirkelagRules.nbasStoreNames.map((value) => canonicalizeStoreName(value))),
     [samvirkelagRules.nbasStoreNames],
   )
   const normalizedNbdLabel = useMemo(
@@ -227,7 +245,7 @@ function App() {
     const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
     const name = props?.name ? String(props.name) : ''
     const normalizedSamvirkelag = normalizeForCompare(samvirkelag)
-    const normalizedName = normalizeForCompare(name)
+    const normalizedName = canonicalizeStoreName(name)
 
     if (normalizedWhitelistSet.has(normalizedSamvirkelag)) return false
     if (normalizedSamvirkelag === normalizeForCompare(NORSK_BUTIKKDRIFT_AS)) return true
