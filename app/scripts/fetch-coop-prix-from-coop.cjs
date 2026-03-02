@@ -180,20 +180,29 @@ function classifySamvirkelag(details, report) {
   const { name, samvirkelag: samvirkelagRaw, chain, address } = details
   const normalizedSamvirkelag = normalizeForCompare(samvirkelagRaw)
   if (normalizedSamvirkelag && SAMVIRKELAG_RULES.samvirkelagWhitelistMap.has(normalizedSamvirkelag)) {
-    return SAMVIRKELAG_RULES.samvirkelagWhitelistMap.get(normalizedSamvirkelag)
+    return {
+      samvirkelag: SAMVIRKELAG_RULES.samvirkelagWhitelistMap.get(normalizedSamvirkelag),
+      nbd_group: false,
+    }
   }
 
   const normalizedChain = normalizeChainId(String(chain || '')) || inferChainFromName(name)
   const zip = extractZipFromAddress(address)
   if (!normalizedChain || !zip) {
     report.unmatched_total += 1
-    return String(samvirkelagRaw || '').trim() || 'Ukjent'
+    return {
+      samvirkelag: String(samvirkelagRaw || '').trim() || 'Ukjent',
+      nbd_group: false,
+    }
   }
 
   const chainZipCandidates = NBAS_REFERENCE.byChainZip.get(`${normalizedChain}|${zip}`) || []
   if (!chainZipCandidates.length) {
     report.unmatched_total += 1
-    return String(samvirkelagRaw || '').trim() || 'Ukjent'
+    return {
+      samvirkelag: String(samvirkelagRaw || '').trim() || 'Ukjent',
+      nbd_group: false,
+    }
   }
 
   const nameCanonical = canonicalizeStoreName(name)
@@ -205,7 +214,10 @@ function classifySamvirkelag(details, report) {
   )
   if (exactNameCandidates.length === 1) {
     report.matched_by_chain_zip_name += 1
-    return SAMVIRKELAG_RULES.norskButikkdriftLabel
+    return {
+      samvirkelag: String(samvirkelagRaw || '').trim() || 'Ukjent',
+      nbd_group: true,
+    }
   }
 
   const exactAddressCandidates = chainZipCandidates.filter(
@@ -213,7 +225,10 @@ function classifySamvirkelag(details, report) {
   )
   if (exactAddressCandidates.length === 1) {
     report.matched_by_chain_zip_address += 1
-    return SAMVIRKELAG_RULES.norskButikkdriftLabel
+    return {
+      samvirkelag: String(samvirkelagRaw || '').trim() || 'Ukjent',
+      nbd_group: true,
+    }
   }
 
   const prefixCandidates = chainZipCandidates.filter((candidate) => {
@@ -225,7 +240,10 @@ function classifySamvirkelag(details, report) {
   })
   if (prefixCandidates.length === 1) {
     report.matched_by_name_prefix_fallback += 1
-    return SAMVIRKELAG_RULES.norskButikkdriftLabel
+    return {
+      samvirkelag: String(samvirkelagRaw || '').trim() || 'Ukjent',
+      nbd_group: true,
+    }
   }
 
   let bestCandidate = null
@@ -246,7 +264,10 @@ function classifySamvirkelag(details, report) {
   })
   if (bestCandidate && bestScore >= 2 && !duplicateBest) {
     report.matched_by_address_token_fallback += 1
-    return SAMVIRKELAG_RULES.norskButikkdriftLabel
+    return {
+      samvirkelag: String(samvirkelagRaw || '').trim() || 'Ukjent',
+      nbd_group: true,
+    }
   }
 
   report.ambiguous_unresolved += 1
@@ -260,7 +281,10 @@ function classifySamvirkelag(details, report) {
       candidates: chainZipCandidates.slice(0, 5).map((candidate) => candidate.name_raw),
     })
   }
-  return String(samvirkelagRaw || '').trim() || 'Ukjent'
+  return {
+    samvirkelag: String(samvirkelagRaw || '').trim() || 'Ukjent',
+    nbd_group: false,
+  }
 }
 
 async function fetchHtml(url) {
@@ -461,7 +485,7 @@ function normalizeStoreFromApi(item) {
 }
 
 function toFeature(details, report) {
-  const classifiedSamvirkelag = classifySamvirkelag(details, report)
+  const classified = classifySamvirkelag(details, report)
   return {
     type: 'Feature',
     geometry: {
@@ -472,7 +496,8 @@ function toFeature(details, report) {
       name: details.name,
       address: details.address,
       chain: details.chain,
-      samvirkelag: classifiedSamvirkelag,
+      samvirkelag: classified.samvirkelag,
+      nbd_group: classified.nbd_group,
       source: details.url,
     },
   }

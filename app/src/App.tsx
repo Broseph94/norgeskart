@@ -23,6 +23,7 @@ type CoopGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Point, {
   address?: string
   chain?: string
   samvirkelag?: string
+  nbd_group?: boolean
 }>
 
 type SamvirkelagRules = {
@@ -242,6 +243,10 @@ function App() {
   )
 
   const isNbdStore = (props: CoopGeoJSON['features'][number]['properties']) => {
+    if (typeof props?.nbd_group === 'boolean') {
+      return props.nbd_group
+    }
+
     const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
     const name = props?.name ? String(props.name) : ''
     const normalizedSamvirkelag = normalizeForCompare(samvirkelag)
