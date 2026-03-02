@@ -6,6 +6,7 @@ const cheerio = require('cheerio')
 const OUTPUT_PATH = path.resolve(__dirname, '..', 'public', 'coop_stores.geojson')
 const CACHE_DIR = path.resolve(__dirname, '..', '.cache')
 const CACHE_PATH = path.resolve(CACHE_DIR, 'coop_store_cache.json')
+const SAMVIRKELAG_RULES_PATH = path.resolve(__dirname, '..', 'config', 'samvirkelag-rules.json')
 
 const USER_AGENT = 'Norgeskart Coop store scraper (educational use)'
 const MAX_STORES = Number(process.env.COOP_MAX_STORES || 0)
@@ -22,6 +23,73 @@ const CHAINS = [
   { id: 'obs', query: 'Obs', label: 'Obs' },
   { id: 'obsbygg', query: 'ObsBygg', label: 'Obs Bygg' },
 ]
+
+function normalizeForCompare(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('nb-NO')
+}
+
+function loadSamvirkelagRules() {
+  if (!fs.existsSync(SAMVIRKELAG_RULES_PATH)) {
+    return {
+      norskButikkdriftLabel: 'Norsk Butikkdrift',
+      nbasNameSet: new Set(),
+      samvirkelagWhitelistMap: new Map(),
+    }
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(SAMVIRKELAG_RULES_PATH, 'utf8'))
+    const norskButikkdriftLabel =
+      typeof parsed?.norskButikkdriftLabel === 'string' && parsed.norskButikkdriftLabel.trim()
+        ? parsed.norskButikkdriftLabel.trim()
+        : 'Norsk Butikkdrift'
+
+    const nbasNameSet = new Set(
+      Array.isArray(parsed?.nbasStoreNames)
+        ? parsed.nbasStoreNames
+            .map((value) => normalizeForCompare(value))
+            .filter(Boolean)
+        : [],
+    )
+
+    const samvirkelagWhitelistMap = new Map()
+    if (Array.isArray(parsed?.samvirkelagWhitelist)) {
+      parsed.samvirkelagWhitelist.forEach((value) => {
+        const clean = String(value || '').trim()
+        if (!clean) return
+        samvirkelagWhitelistMap.set(normalizeForCompare(clean), clean)
+      })
+    }
+
+    return { norskButikkdriftLabel, nbasNameSet, samvirkelagWhitelistMap }
+  } catch (error) {
+    console.warn(`Could not read ${SAMVIRKELAG_RULES_PATH}: ${error.message || error}`)
+    return {
+      norskButikkdriftLabel: 'Norsk Butikkdrift',
+      nbasNameSet: new Set(),
+      samvirkelagWhitelistMap: new Map(),
+    }
+  }
+}
+
+const SAMVIRKELAG_RULES = loadSamvirkelagRules()
+
+function classifySamvirkelag(name, samvirkelagRaw) {
+  const normalizedSamvirkelag = normalizeForCompare(samvirkelagRaw)
+  if (normalizedSamvirkelag && SAMVIRKELAG_RULES.samvirkelagWhitelistMap.has(normalizedSamvirkelag)) {
+    return SAMVIRKELAG_RULES.samvirkelagWhitelistMap.get(normalizedSamvirkelag)
+  }
+
+  const normalizedName = normalizeForCompare(name)
+  if (normalizedName && SAMVIRKELAG_RULES.nbasNameSet.has(normalizedName)) {
+    return SAMVIRKELAG_RULES.norskButikkdriftLabel
+  }
+
+  return String(samvirkelagRaw || '').trim() || 'Ukjent'
+}
 
 async function fetchHtml(url) {
   const response = await fetch(url, {
@@ -221,6 +289,7 @@ function normalizeStoreFromApi(item) {
 }
 
 function toFeature(details) {
+  const classifiedSamvirkelag = classifySamvirkelag(details.name, details.samvirkelag)
   return {
     type: 'Feature',
     geometry: {
@@ -231,7 +300,7 @@ function toFeature(details) {
       name: details.name,
       address: details.address,
       chain: details.chain,
-      samvirkelag: details.samvirkelag,
+      samvirkelag: classifiedSamvirkelag,
       source: details.url,
     },
   }

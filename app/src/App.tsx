@@ -788,7 +788,7 @@ function App() {
             )}
           </div>
           <label className="section-label" htmlFor="samvirkelag-select">
-            Samvirkelagtilhørighet
+            Samvirkelag
           </label>
           <div className="search-wrapper">
             <input
