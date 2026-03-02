@@ -241,11 +241,10 @@ function App() {
     () => normalizeForCompare(samvirkelagRules.norskButikkdriftLabel),
     [samvirkelagRules.norskButikkdriftLabel],
   )
+  const normalizedNbdAs = useMemo(() => normalizeForCompare(NORSK_BUTIKKDRIFT_AS), [])
 
   const isNbdStore = (props: CoopGeoJSON['features'][number]['properties']) => {
-    if (typeof props?.nbd_group === 'boolean') {
-      return props.nbd_group
-    }
+    if (props?.nbd_group === true) return true
 
     const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
     const name = props?.name ? String(props.name) : ''
@@ -253,7 +252,7 @@ function App() {
     const normalizedName = canonicalizeStoreName(name)
 
     if (normalizedWhitelistSet.has(normalizedSamvirkelag)) return false
-    if (normalizedSamvirkelag === normalizeForCompare(NORSK_BUTIKKDRIFT_AS)) return true
+    if (normalizedSamvirkelag === normalizedNbdAs) return true
     if (normalizedSamvirkelag === normalizedNbdLabel) return true
     return normalizedNbasNameSet.has(normalizedName)
   }
@@ -282,10 +281,7 @@ function App() {
 
         if (isNbdStore(props)) {
           const normalizedSam = normalizeForCompare(samvirkelag)
-          if (
-            normalizedSam !== normalizeForCompare(NORSK_BUTIKKDRIFT_AS) &&
-            normalizedSam !== normalizedNbdLabel
-          ) {
+          if (normalizedSam !== normalizedNbdAs && normalizedSam !== normalizedNbdLabel) {
             nbdChildren.add(samvirkelag)
           }
           return
@@ -311,7 +307,7 @@ function App() {
       regularOptions: filteredRegular,
       nbdChildOptions: parentMatches ? nbdChildOptions : filteredChildren,
     }
-  }, [coopStores, isNbdStore, normalizedNbdLabel, samvirkelagRules.norskButikkdriftLabel, samvirkelagSearch])
+  }, [coopStores, isNbdStore, normalizedNbdAs, normalizedNbdLabel, samvirkelagRules.norskButikkdriftLabel, samvirkelagSearch])
 
   const selectedSamvirkelagLabel = useMemo(() => {
     if (selectedSamvirkelag === 'Alle') return 'Alle'

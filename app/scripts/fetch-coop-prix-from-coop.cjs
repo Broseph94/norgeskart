@@ -185,6 +185,12 @@ function classifySamvirkelag(details, report) {
       nbd_group: false,
     }
   }
+  if (normalizedSamvirkelag === normalizeForCompare('NORSK BUTIKKDRIFT AS')) {
+    return {
+      samvirkelag: 'NORSK BUTIKKDRIFT AS',
+      nbd_group: true,
+    }
+  }
 
   const normalizedChain = normalizeChainId(String(chain || '')) || inferChainFromName(name)
   const zip = extractZipFromAddress(address)
@@ -632,7 +638,7 @@ async function run() {
           name: String(props.name || current.name || ''),
           address: String(props.address || current.address || ''),
           chain: String(props.chain || current.chain || ''),
-          samvirkelag: String(props.samvirkelag || current.samvirkelag || ''),
+          samvirkelag: String(current.samvirkelag || props.samvirkelag || ''),
           url: String(props.source || current.url || ''),
           latitude: Number(coords[1]),
           longitude: Number(coords[0]),
