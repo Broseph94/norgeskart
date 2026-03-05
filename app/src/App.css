@@ -14,27 +14,38 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
   color: var(--ink-900);
   background: radial-gradient(circle at top left, #ffffff 0%, #eef3f7 55%, #e5ebf2 100%);
+  overflow: hidden;
 }
 
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
+  overflow: hidden;
 }
 
 .sidebar {
   width: var(--sidebar-width);
-  padding: 2rem 1.5rem;
+  height: 100vh;
+  padding: 1.25rem 1rem;
   background: linear-gradient(160deg, #f8fafc 0%, #eef2f6 100%);
   border-right: 1px solid var(--sand-200);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.25rem;
+  overflow-y: auto;
+  overflow-x: visible;
 }
 
 .sidebar-header h1 {
@@ -52,7 +63,7 @@ body {
 .sidebar-section {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.55rem;
 }
 
 .stat {
@@ -115,8 +126,22 @@ body {
   color: var(--ink-900);
 }
 
-.file-input {
-  font-size: 0.85rem;
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-dropzone {
+  width: 100%;
+  border-style: dashed;
+  text-align: center;
 }
 
 .primary-button,
@@ -283,6 +308,11 @@ body {
 }
 
 .samvirkelag-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 40;
   border: 1px solid var(--sand-200);
   background: #ffffff;
   border-radius: 12px;
@@ -338,10 +368,33 @@ body {
   font-size: 0.85rem;
 }
 
+.tool-panel {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.tool-button-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tool-button {
+  flex: 1;
+  min-width: 88px;
+}
+
+.tool-button-active {
+  border-color: #93c5fd;
+  background: #dbeafe;
+}
+
 .map-panel {
   flex: 1;
   min-width: 0;
   position: relative;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .map-container {
@@ -357,15 +410,21 @@ body {
 @media (max-width: 900px) {
   .app-shell {
     flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
   }
 
   .sidebar {
     width: 100%;
+    height: auto;
     border-right: none;
     border-bottom: 1px solid var(--sand-200);
+    overflow: visible;
   }
 
   .map-panel {
     min-height: 70vh;
+    height: 70vh;
   }
 }

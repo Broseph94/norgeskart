@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import maplibregl, { type GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
@@ -6,6 +6,7 @@ import { normalizePostnummer } from './utils/postnummer'
 import { gunzipSync } from 'fflate'
 import Papa from 'papaparse'
 import { saveAs } from 'file-saver'
+import { booleanIntersects, circle as turfCircle, featureCollection, point as turfPoint, polygon as turfPolygon } from '@turf/turf'
 
 type PostalGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Geometry, { postnummer?: string }>
 type PostalLabelGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Point, { postnummer?: string }>
@@ -41,6 +42,7 @@ const DEFAULT_SAMVIRKELAG_RULES: SamvirkelagRules = {
 const NORSK_BUTIKKDRIFT_AS = 'NORSK BUTIKKDRIFT AS'
 const NBD_ALL_VALUE = '__NBD_ALL__'
 const NBD_CHILD_PREFIX = '__NBD_CHILD__::'
+type SelectionTool = 'none' | 'radius' | 'polygon'
 
 const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty'
 const NORWAY_CENTER: [number, number] = [10.7522, 59.9139]
@@ -227,8 +229,20 @@ function App() {
   const [samvirkelagSearch, setSamvirkelagSearch] = useState('')
   const [isSamvirkelagMenuOpen, setIsSamvirkelagMenuOpen] = useState(false)
   const [isNbdExpanded, setIsNbdExpanded] = useState(false)
+  const [postalData, setPostalData] = useState<PostalGeoJSON | null>(null)
+  const [selectionTool, setSelectionTool] = useState<SelectionTool>('none')
+  const [radiusMeters, setRadiusMeters] = useState(1000)
+  const [radiusCenter, setRadiusCenter] = useState<[number, number] | null>(null)
+  const [polygonPoints, setPolygonPoints] = useState<[number, number][]>([])
+  const [isPolygonDrawing, setIsPolygonDrawing] = useState(false)
 
-  const highlightedCount = useMemo(() => highlightedPostalcodes.size, [highlightedPostalcodes])
+  const selectionToolRef = useRef<SelectionTool>('none')
+  const radiusCenterRef = useRef<[number, number] | null>(null)
+  const polygonPointsRef = useRef<[number, number][]>([])
+  const draggingVertexIndexRef = useRef<number | null>(null)
+  const isDraggingVertexRef = useRef(false)
+  const suppressMapClickUntilRef = useRef(0)
+
   const normalizedWhitelistSet = useMemo(
     () => new Set(samvirkelagRules.samvirkelagWhitelist.map((value) => normalizeForCompare(value))),
     [samvirkelagRules.samvirkelagWhitelist],
@@ -317,6 +331,40 @@ function App() {
     }
     return selectedSamvirkelag
   }, [samvirkelagRules.norskButikkdriftLabel, selectedSamvirkelag])
+
+  const buildRadiusGeometry = (center: [number, number], meters: number) =>
+    turfCircle(center, meters, { units: 'meters', steps: 96 })
+
+  const buildDrawPolygon = (points: [number, number][]) => {
+    if (points.length < 3) return null
+    return turfPolygon([[...points, points[0]]])
+  }
+
+  const mergeHighlighted = (nextCodes: Set<string>) => {
+    if (!nextCodes.size) return
+    setHighlightedPostalcodes((prev) => {
+      const merged = new Set(prev)
+      nextCodes.forEach((code) => merged.add(code))
+      return merged
+    })
+  }
+
+  const selectPostcodesByGeometry = (geometry: GeoJSON.Feature<GeoJSON.Polygon>) => {
+    const matches = new Set<string>()
+    if (!postalData?.features?.length) return matches
+    postalData.features.forEach((feature) => {
+      const postnummer = normalizePostnummer(String(feature.properties?.postnummer || ''))
+      if (!postnummer || !feature.geometry) return
+      try {
+        if (booleanIntersects(feature as GeoJSON.Feature<GeoJSON.Geometry>, geometry)) {
+          matches.add(postnummer)
+        }
+      } catch {
+        return
+      }
+    })
+    return matches
+  }
 
   const handleChainToggle = (chainId: string) => {
     setActiveChains((prev) => ({
@@ -430,6 +478,13 @@ function App() {
     handleCsvFile(file)
   }
 
+  const handleCsvDrop = (event: DragEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    const file = event.dataTransfer.files?.[0]
+    if (!file) return
+    handleCsvFile(file)
+  }
+
   const handleClear = () => {
     setHighlightedPostalcodes(new Set())
     setImportSummary(null)
@@ -447,6 +502,18 @@ function App() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     saveAs(blob, 'postnummer.csv')
   }
+
+  useEffect(() => {
+    selectionToolRef.current = selectionTool
+  }, [selectionTool])
+
+  useEffect(() => {
+    radiusCenterRef.current = radiusCenter
+  }, [radiusCenter])
+
+  useEffect(() => {
+    polygonPointsRef.current = polygonPoints
+  }, [polygonPoints])
 
   useEffect(() => {
     if (mapRef.current || !mapContainerRef.current) return
@@ -514,6 +581,7 @@ function App() {
         }
 
         const data = await loadPostalGeoJSON()
+        setPostalData(data)
         let labelData: PostalLabelGeoJSON | null = null
         try {
           labelData = await loadPostalLabelGeoJSON()
@@ -637,6 +705,136 @@ function App() {
           map.moveLayer('postal-labels-dense')
         }
 
+        if (!map.getSource('selection-radius')) {
+          map.addSource('selection-radius', {
+            type: 'geojson',
+            data: featureCollection([]),
+          })
+        }
+
+        if (!map.getLayer('selection-radius-fill')) {
+          map.addLayer({
+            id: 'selection-radius-fill',
+            type: 'fill',
+            source: 'selection-radius',
+            paint: {
+              'fill-color': '#2563eb',
+              'fill-opacity': 0.15,
+            },
+          })
+        }
+
+        if (!map.getLayer('selection-radius-outline')) {
+          map.addLayer({
+            id: 'selection-radius-outline',
+            type: 'line',
+            source: 'selection-radius',
+            paint: {
+              'line-color': '#2563eb',
+              'line-width': 2,
+              'line-opacity': 0.8,
+            },
+          })
+        }
+
+        if (!map.getSource('selection-radius-center')) {
+          map.addSource('selection-radius-center', {
+            type: 'geojson',
+            data: featureCollection([]),
+          })
+        }
+
+        if (!map.getLayer('selection-radius-center')) {
+          map.addLayer({
+            id: 'selection-radius-center',
+            type: 'symbol',
+            source: 'selection-radius-center',
+            layout: {
+              'text-field': '⚑',
+              'text-size': 14,
+              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            },
+            paint: {
+              'text-color': '#dc2626',
+              'text-halo-color': '#ffffff',
+              'text-halo-width': 1.5,
+            },
+          })
+        }
+
+        if (!map.getSource('selection-polygon')) {
+          map.addSource('selection-polygon', {
+            type: 'geojson',
+            data: featureCollection([]),
+          })
+        }
+
+        if (!map.getLayer('selection-polygon-fill')) {
+          map.addLayer({
+            id: 'selection-polygon-fill',
+            type: 'fill',
+            source: 'selection-polygon',
+            paint: {
+              'fill-color': '#0ea5e9',
+              'fill-opacity': 0.15,
+            },
+          })
+        }
+
+        if (!map.getLayer('selection-polygon-outline')) {
+          map.addLayer({
+            id: 'selection-polygon-outline',
+            type: 'line',
+            source: 'selection-polygon',
+            paint: {
+              'line-color': '#0284c7',
+              'line-width': 2,
+              'line-opacity': 0.9,
+            },
+          })
+        }
+
+        if (!map.getSource('selection-polygon-vertices')) {
+          map.addSource('selection-polygon-vertices', {
+            type: 'geojson',
+            data: featureCollection([]),
+          })
+        }
+
+        if (!map.getLayer('selection-polygon-vertices')) {
+          map.addLayer({
+            id: 'selection-polygon-vertices',
+            type: 'circle',
+            source: 'selection-polygon-vertices',
+            paint: {
+              'circle-radius': 4,
+              'circle-color': '#2563eb',
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 1.5,
+            },
+          })
+        }
+
+        if (!map.getSource('selection-polygon-line')) {
+          map.addSource('selection-polygon-line', {
+            type: 'geojson',
+            data: featureCollection([]),
+          })
+        }
+
+        if (!map.getLayer('selection-polygon-line')) {
+          map.addLayer({
+            id: 'selection-polygon-line',
+            type: 'line',
+            source: 'selection-polygon-line',
+            paint: {
+              'line-color': '#2563eb',
+              'line-width': 2,
+              'line-dasharray': [1, 1],
+            },
+          })
+        }
+
         map.on('mouseenter', 'postal-fill', () => {
           map.getCanvas().style.cursor = 'pointer'
         })
@@ -645,6 +843,7 @@ function App() {
         })
 
         map.on('click', 'postal-fill', (event) => {
+          if (selectionToolRef.current !== 'none') return
           const feature = event.features?.[0]
           const raw = feature?.properties?.postnummer
           const normalized = raw ? normalizePostnummer(String(raw)) : null
@@ -717,6 +916,7 @@ function App() {
         })
 
         map.on('click', 'coop-pins', (event) => {
+          if (selectionToolRef.current !== 'none') return
           const feature = event.features?.[0]
           const props = feature?.properties || {}
           const name = props.name ? String(props.name) : 'Coop Prix'
@@ -737,6 +937,75 @@ function App() {
           `
           popup.setLngLat(coordinates as [number, number]).setHTML(content).addTo(map)
         })
+
+        map.on('click', (event) => {
+          if (Date.now() < suppressMapClickUntilRef.current) return
+          if (isDraggingVertexRef.current) return
+          if (selectionToolRef.current === 'radius') {
+            const center: [number, number] = [event.lngLat.lng, event.lngLat.lat]
+            setRadiusCenter(center)
+            return
+          }
+          if (selectionToolRef.current === 'polygon') {
+            const hitVertex = map.queryRenderedFeatures(event.point, {
+              layers: ['selection-polygon-vertices'],
+            })
+            if (hitVertex.length > 0) return
+            const point: [number, number] = [event.lngLat.lng, event.lngLat.lat]
+            setPolygonPoints((prev) => [...prev, point])
+            setIsPolygonDrawing(true)
+          }
+        })
+
+        map.on('mouseenter', 'selection-polygon-vertices', () => {
+          if (selectionToolRef.current === 'polygon') {
+            map.getCanvas().style.cursor = 'move'
+          }
+        })
+        map.on('mouseleave', 'selection-polygon-vertices', () => {
+          if (!isDraggingVertexRef.current) {
+            map.getCanvas().style.cursor = ''
+          }
+        })
+
+        map.on('mousedown', 'selection-polygon-vertices', (event) => {
+          if (selectionToolRef.current !== 'polygon') return
+          const feature = event.features?.[0]
+          const rawIndex = feature?.properties?.vertexIndex
+          const vertexIndex = typeof rawIndex === 'number' ? rawIndex : Number(rawIndex)
+          if (!Number.isFinite(vertexIndex)) return
+
+          draggingVertexIndexRef.current = vertexIndex
+          isDraggingVertexRef.current = true
+          suppressMapClickUntilRef.current = Date.now() + 300
+          map.dragPan.disable()
+          map.getCanvas().style.cursor = 'grabbing'
+        })
+
+        map.on('mousemove', (event) => {
+          if (!isDraggingVertexRef.current) return
+          const index = draggingVertexIndexRef.current
+          if (index == null) return
+          const nextPoint: [number, number] = [event.lngLat.lng, event.lngLat.lat]
+          setPolygonPoints((prev) => {
+            if (index < 0 || index >= prev.length) return prev
+            const next = [...prev]
+            next[index] = nextPoint
+            return next
+          })
+        })
+
+        const stopVertexDrag = () => {
+          if (!isDraggingVertexRef.current) return
+          isDraggingVertexRef.current = false
+          draggingVertexIndexRef.current = null
+          suppressMapClickUntilRef.current = Date.now() + 150
+          map.dragPan.enable()
+          map.getCanvas().style.cursor = ''
+        }
+
+        map.on('mouseup', stopVertexDrag)
+        map.on('mouseleave', stopVertexDrag)
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Ukjent feil ved lasting av butikker'
         setCoopLoadError(message)
@@ -759,6 +1028,93 @@ function App() {
     const values = Array.from(highlightedPostalcodes)
     map.setFilter('postal-highlight', ['in', ['get', 'postnummer'], ['literal', values]])
   }, [highlightedPostalcodes])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    if (selectionTool === 'polygon') {
+      map.doubleClickZoom.disable()
+      return
+    }
+    map.doubleClickZoom.enable()
+  }, [selectionTool])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const source = map.getSource('selection-radius')
+    if (!source || !('setData' in source)) return
+    if (selectionTool === 'radius' && radiusCenter) {
+      const geometry = buildRadiusGeometry(radiusCenter, radiusMeters)
+      ;(source as GeoJSONSource).setData(featureCollection([geometry]))
+    } else {
+      ;(source as GeoJSONSource).setData(featureCollection([]))
+    }
+  }, [selectionTool, radiusCenter, radiusMeters])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const source = map.getSource('selection-radius-center')
+    if (!source || !('setData' in source)) return
+    if (selectionTool === 'radius' && radiusCenter) {
+      ;(source as GeoJSONSource).setData(featureCollection([turfPoint(radiusCenter)]))
+    } else {
+      ;(source as GeoJSONSource).setData(featureCollection([]))
+    }
+  }, [selectionTool, radiusCenter])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const polygonSource = map.getSource('selection-polygon')
+    const verticesSource = map.getSource('selection-polygon-vertices')
+    const lineSource = map.getSource('selection-polygon-line')
+    if (!polygonSource || !verticesSource || !lineSource) return
+    if (!('setData' in polygonSource) || !('setData' in verticesSource) || !('setData' in lineSource)) return
+
+    if (selectionTool === 'polygon') {
+      if (polygonPoints.length > 0) {
+        ;(verticesSource as GeoJSONSource).setData({
+          type: 'FeatureCollection',
+          features: polygonPoints.map((coords, vertexIndex) => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: coords },
+            properties: { vertexIndex },
+          })),
+        })
+      } else {
+        ;(verticesSource as GeoJSONSource).setData(featureCollection([]))
+      }
+
+      if (polygonPoints.length >= 2) {
+        ;(lineSource as GeoJSONSource).setData({
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'LineString', coordinates: polygonPoints },
+              properties: {},
+            },
+          ],
+        })
+      } else {
+        ;(lineSource as GeoJSONSource).setData(featureCollection([]))
+      }
+
+      const polygon = buildDrawPolygon(polygonPoints)
+      if (polygon) {
+        ;(polygonSource as GeoJSONSource).setData(featureCollection([polygon]))
+      } else {
+        ;(polygonSource as GeoJSONSource).setData(featureCollection([]))
+      }
+      return
+    }
+
+    ;(verticesSource as GeoJSONSource).setData(featureCollection([]))
+    ;(lineSource as GeoJSONSource).setData(featureCollection([]))
+    ;(polygonSource as GeoJSONSource).setData(featureCollection([]))
+  }, [selectionTool, polygonPoints])
 
   useEffect(() => {
     if (!isSamvirkelagMenuOpen) return
@@ -853,19 +1209,56 @@ function App() {
       .addTo(map)
   }
 
+  const handleStartRadiusMode = () => {
+    setSelectionTool('radius')
+    setRadiusCenter(null)
+    setPolygonPoints([])
+    setIsPolygonDrawing(false)
+  }
+
+  const handleStartPolygonMode = () => {
+    setSelectionTool('polygon')
+    setRadiusCenter(null)
+    setPolygonPoints([])
+    setIsPolygonDrawing(true)
+  }
+
+  const handleCancelSelectionTool = () => {
+    setSelectionTool('none')
+    setRadiusCenter(null)
+    setPolygonPoints([])
+    setIsPolygonDrawing(false)
+  }
+
+  const handleApplyRadiusSelection = () => {
+    if (!radiusCenter) return
+    const geometry = buildRadiusGeometry(radiusCenter, radiusMeters)
+    const matches = selectPostcodesByGeometry(geometry as GeoJSON.Feature<GeoJSON.Polygon>)
+    mergeHighlighted(matches)
+    setRadiusCenter(null)
+  }
+
+  const handleCompletePolygonSelection = () => {
+    const geometry = buildDrawPolygon(polygonPoints)
+    if (!geometry) return
+    const matches = selectPostcodesByGeometry(geometry as GeoJSON.Feature<GeoJSON.Polygon>)
+    mergeHighlighted(matches)
+    setPolygonPoints([])
+    setIsPolygonDrawing(false)
+  }
+
+  const handleUndoPolygonPoint = () => {
+    setPolygonPoints((prev) => prev.slice(0, -1))
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-header">
           <h1>Norgeskart</h1>
-          <p>Interaktivt postkodekart</p>
         </div>
 
         <div className="sidebar-section">
-          <div className="stat">
-            <span className="stat-label">Valgte soner</span>
-            <span className="stat-value">{highlightedCount}</span>
-          </div>
           <div className="status">
             {isLoadingPostal && <span>Laster postsoner...</span>}
             {postalLoadError && <span className="status-error">{postalLoadError}</span>}
@@ -1019,6 +1412,82 @@ function App() {
         </div>
 
         <div className="sidebar-section">
+          <div className="section-label">Geografisk markering</div>
+          <div className="tool-button-row">
+            <button
+              type="button"
+              className={`secondary-button tool-button ${selectionTool === 'radius' ? 'tool-button-active' : ''}`}
+              onClick={handleStartRadiusMode}
+            >
+              Radius
+            </button>
+            <button
+              type="button"
+              className={`secondary-button tool-button ${selectionTool === 'polygon' ? 'tool-button-active' : ''}`}
+              onClick={handleStartPolygonMode}
+            >
+              Polygon
+            </button>
+            <button
+              type="button"
+              className="secondary-button tool-button"
+              onClick={handleCancelSelectionTool}
+            >
+              Avbryt
+            </button>
+          </div>
+
+          {selectionTool === 'radius' && (
+            <div className="tool-panel">
+              <label className="section-label" htmlFor="radius-slider">
+                Radius: {radiusMeters >= 1000 ? `${(radiusMeters / 1000).toFixed(1)} km` : `${radiusMeters} m`}
+              </label>
+              <input
+                id="radius-slider"
+                type="range"
+                min={100}
+                max={50000}
+                step={100}
+                value={radiusMeters}
+                onChange={(event) => setRadiusMeters(Number(event.target.value))}
+              />
+              <button
+                type="button"
+                className="primary-button"
+                onClick={handleApplyRadiusSelection}
+                disabled={!radiusCenter}
+              >
+                Marker postkoder
+              </button>
+            </div>
+          )}
+
+          {selectionTool === 'polygon' && (
+            <div className="tool-panel">
+              <div className="status">Punkter: {polygonPoints.length} {isPolygonDrawing ? '(tegning aktiv)' : ''}</div>
+              <div className="tool-button-row">
+                <button
+                  type="button"
+                  className="primary-button tool-button"
+                  onClick={handleCompletePolygonSelection}
+                  disabled={polygonPoints.length < 3}
+                >
+                  Marker postkoder
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button tool-button"
+                  onClick={handleUndoPolygonPoint}
+                  disabled={!polygonPoints.length}
+                >
+                  Fjern siste punkt
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="sidebar-section">
           <label className="section-label" htmlFor="postal-input">
             Legg til postkoder
           </label>
@@ -1030,9 +1499,6 @@ function App() {
             onChange={(event) => setPostalInput(event.target.value)}
             placeholder="Eksempel: 0150, 0151, 0152"
           />
-          <div className="helper-text">
-            Du kan legge til komma eller linjeseparerte postkoder med 4 siffer.
-          </div>
           <button className="primary-button" type="button" onClick={handleApplyPostalInput}>
             Legg til
           </button>
@@ -1048,11 +1514,17 @@ function App() {
             type="file"
             accept=".csv"
             onChange={handleCsvChange}
-            className="file-input"
+            className="file-input-hidden"
           />
-          <div className="helper-text">
-            Vi ser etter kolonner som heter postnummer, postal_code, postcode eller zip.
-          </div>
+          <button
+            type="button"
+            className="secondary-button file-dropzone"
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={handleCsvDrop}
+          >
+            Velg eller dra inn CSV
+          </button>
         </div>
 
         {importSummary && (
@@ -1091,11 +1563,6 @@ function App() {
           </button>
         </div>
 
-        <div className="sidebar-section">
-          <p className="helper-text">
-            Klikk på en postsone i kartet for å markere den.
-          </p>
-        </div>
       </aside>
 
       <main className="map-panel">
