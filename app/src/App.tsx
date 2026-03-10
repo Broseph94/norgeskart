@@ -7,6 +7,7 @@ import { gunzipSync } from 'fflate'
 import Papa from 'papaparse'
 import { saveAs } from 'file-saver'
 import { booleanIntersects, circle as turfCircle, featureCollection, point as turfPoint, polygon as turfPolygon } from '@turf/turf'
+import * as XLSX from 'xlsx'
 
 type PostalGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Geometry, { postnummer?: string }>
 type PostalLabelGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Point, { postnummer?: string }>
@@ -46,6 +47,7 @@ type SelectionTool = 'none' | 'radius' | 'polygon'
 
 const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty'
 const NORWAY_CENTER: [number, number] = [10.7522, 59.9139]
+const SUPPORTED_IMPORT_EXTENSIONS = ['csv', 'xlsx', 'xls', 'xlsm', 'xlsb'] as const
 const CHAIN_OPTIONS = [
   { id: 'prix', label: 'Coop Prix', color: '#f9da47' },
   { id: 'extra', label: 'Coop Extra', color: '#eb1907' },
@@ -215,6 +217,7 @@ function App() {
 
   const [postalInput, setPostalInput] = useState('')
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
   const [activeChains, setActiveChains] = useState<Record<string, boolean>>(() => ({
     prix: true,
     extra: true,
@@ -435,6 +438,7 @@ function App() {
       header: true,
       skipEmptyLines: true,
       complete: (result: Papa.ParseResult<Record<string, string>>) => {
+        setImportError(null)
         const originalFields = result.meta.fields || []
         const fields = originalFields.map((field: string) => field?.toLowerCase().trim() || '')
         const headerKey = preferredHeaders.find((candidate) => fields.includes(candidate))
@@ -452,6 +456,7 @@ function App() {
           header: false,
           skipEmptyLines: true,
           complete: (fallbackResult: Papa.ParseResult<unknown[]>) => {
+            setImportError(null)
             const values: string[] = []
             ;(fallbackResult.data as unknown[]).forEach((row) => {
               if (Array.isArray(row)) {
@@ -467,22 +472,97 @@ function App() {
         })
       },
       error: () => {
+        setImportError('Kunne ikke lese filen.')
         setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
       },
     })
   }
 
+  const handleExcelFile = async (file: File) => {
+    const preferredHeaders = ['postnummer', 'postal_code', 'postcode', 'zip']
+    try {
+      const buffer = await file.arrayBuffer()
+      const workbook = XLSX.read(buffer, { type: 'array' })
+
+      const pickSheet = () => {
+        for (const name of workbook.SheetNames) {
+          const sheet = workbook.Sheets[name]
+          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
+          if (!rows.length) continue
+          const keys = Object.keys(rows[0]).map((k) => k.toLowerCase().trim())
+          if (preferredHeaders.some((candidate) => keys.includes(candidate))) {
+            return { sheet, rows }
+          }
+        }
+        const fallbackName = workbook.SheetNames[0]
+        return fallbackName ? { sheet: workbook.Sheets[fallbackName], rows: [] as Record<string, unknown>[] } : null
+      }
+
+      const picked = pickSheet()
+      if (!picked?.sheet) {
+        setImportError('Kunne ikke lese filen.')
+        setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
+        return
+      }
+
+      const rows = picked.rows.length
+        ? picked.rows
+        : XLSX.utils.sheet_to_json<Record<string, unknown>>(picked.sheet, { defval: '' })
+
+      if (rows.length) {
+        const fields = Object.keys(rows[0]).map((k) => k.toLowerCase().trim())
+        const headerKey = preferredHeaders.find((candidate) => fields.includes(candidate))
+        if (headerKey) {
+          const originalKey = Object.keys(rows[0])[fields.indexOf(headerKey)] || headerKey
+          const values = rows
+            .map((row) => String(row[originalKey] ?? ''))
+            .filter(Boolean)
+          setImportError(null)
+          mergePostalCodes(values, 'csv', rows.length)
+          return
+        }
+      }
+
+      const matrix = XLSX.utils.sheet_to_json<(string | number | null)[]>(picked.sheet, {
+        header: 1,
+        blankrows: false,
+        defval: '',
+      })
+      const fallbackValues: string[] = []
+      matrix.forEach((row: (string | number | null)[]) => row.forEach((cell: string | number | null) => fallbackValues.push(String(cell ?? ''))))
+      setImportError(null)
+      mergePostalCodes(fallbackValues, 'csv', matrix.length)
+    } catch {
+      setImportError('Kunne ikke lese Excel-filen.')
+      setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
+    }
+  }
+
+  const handleImportFile = async (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    if (!SUPPORTED_IMPORT_EXTENSIONS.includes(ext as (typeof SUPPORTED_IMPORT_EXTENSIONS)[number])) {
+      setImportError('Filformat støttes ikke. Støttede formater er: .csv, .xlsx, .xls, .xlsm, .xlsb.')
+      setImportSummary(null)
+      return
+    }
+    if (ext === 'csv') {
+      handleCsvFile(file)
+      return
+    }
+    await handleExcelFile(file)
+  }
+
   const handleCsvChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-    handleCsvFile(file)
+    void handleImportFile(file)
   }
 
   const handleCsvDrop = (event: DragEvent<HTMLButtonElement>) => {
     event.preventDefault()
     const file = event.dataTransfer.files?.[0]
     if (!file) return
-    handleCsvFile(file)
+    void handleImportFile(file)
   }
 
   const handleClear = () => {
@@ -1506,13 +1586,13 @@ function App() {
 
         <div className="sidebar-section">
           <label className="section-label" htmlFor="csv-input">
-            Importer CSV-fil
+            Importer excel fil
           </label>
           <input
             id="csv-input"
             ref={fileInputRef}
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls,.xlsm,.xlsb"
             onChange={handleCsvChange}
             className="file-input-hidden"
           />
@@ -1523,8 +1603,9 @@ function App() {
             onDragOver={(event) => event.preventDefault()}
             onDrop={handleCsvDrop}
           >
-            Velg eller dra inn CSV
+            Last opp fil
           </button>
+          {importError && <div className="status-error">{importError}</div>}
         </div>
 
         {importSummary && (
