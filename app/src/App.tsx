@@ -583,6 +583,20 @@ function App() {
     saveAs(blob, 'postnummer.csv')
   }
 
+  const handleDownloadXlsx = () => {
+    if (!highlightedPostalcodes.size) return
+    const sorted = Array.from(highlightedPostalcodes).sort()
+    const values = sorted.join(',')
+    const worksheet = XLSX.utils.aoa_to_sheet([['postnummer'], [values]])
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Postnummer')
+    const out = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([out], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    saveAs(blob, 'postnummer.xlsx')
+  }
+
   useEffect(() => {
     selectionToolRef.current = selectionTool
   }, [selectionTool])
@@ -1641,6 +1655,14 @@ function App() {
             disabled={!highlightedPostalcodes.size}
           >
             Last ned CSV
+          </button>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={handleDownloadXlsx}
+            disabled={!highlightedPostalcodes.size}
+          >
+            Last ned XLSX
           </button>
         </div>
 
