@@ -1,43 +1,42 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+} from 'react'
 import maplibregl, { type GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
 import { normalizePostnummer } from './utils/postnummer'
-import { gunzipSync } from 'fflate'
-import Papa from 'papaparse'
-import { saveAs } from 'file-saver'
 import { booleanIntersects, circle as turfCircle, featureCollection, point as turfPoint, polygon as turfPolygon } from '@turf/turf'
-import * as XLSX from 'xlsx'
-
-type PostalGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Geometry, { postnummer?: string }>
-type PostalLabelGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Point, { postnummer?: string }>
+import {
+  DEFAULT_SAMVIRKELAG_RULES,
+  loadCoopStoresGeoJSON,
+  loadPostalGeoJSON,
+  loadPostalLabelGeoJSON,
+  loadSamvirkelagRules,
+  type CoopGeoJSON,
+  type PostalGeoJSON,
+  type PostalLabelGeoJSON,
+  type SamvirkelagRules,
+} from './utils/dataLoaders'
+import {
+  findPostalHeaderKey,
+  flattenMatrix,
+  flattenUnknownRows,
+  extractValuesFromObjectRows,
+} from './utils/importParsing'
+import { buildStorePopupContent } from './utils/mapPopups'
+import { canonicalizeStoreName, normalizeForCompare } from './utils/storeNormalization'
 
 type ImportSummary = {
   source: 'text' | 'csv'
   added: number
   invalid: number
   total: number
-}
-
-type CoopGeoJSON = GeoJSON.FeatureCollection<GeoJSON.Point, {
-  name?: string
-  brand?: string
-  address?: string
-  chain?: string
-  samvirkelag?: string
-  nbd_group?: boolean
-}>
-
-type SamvirkelagRules = {
-  norskButikkdriftLabel: string
-  nbasStoreNames: string[]
-  samvirkelagWhitelist: string[]
-}
-
-const DEFAULT_SAMVIRKELAG_RULES: SamvirkelagRules = {
-  norskButikkdriftLabel: 'Norsk Butikkdrift',
-  nbasStoreNames: [],
-  samvirkelagWhitelist: [],
 }
 
 const NORSK_BUTIKKDRIFT_AS = 'NORSK BUTIKKDRIFT AS'
@@ -58,6 +57,10 @@ const CHAIN_OPTIONS = [
 
 const getChainLabel = (chainId: string) =>
   CHAIN_OPTIONS.find((option) => option.id === chainId)?.label || chainId
+
+const loadPapa = async () => (await import('papaparse')).default
+const loadXlsx = async () => await import('xlsx')
+const loadSaveAs = async () => (await import('file-saver')).saveAs
 
 const CITY_LABELS: GeoJSON.FeatureCollection<GeoJSON.Point, { name: string }> = {
   type: 'FeatureCollection',
@@ -93,113 +96,6 @@ const CITY_LABELS: GeoJSON.FeatureCollection<GeoJSON.Point, { name: string }> = 
       geometry: { type: 'Point', coordinates: [18.9553, 69.6492] },
     },
   ],
-}
-
-
-async function loadPostalGeoJSON(): Promise<PostalGeoJSON> {
-  const candidates = [
-    '/postal-codes.dissolved.geojson.gz',
-    '/postal-codes.dissolved.geojson',
-    '/postal-codes.clipped.geojson.gz',
-    '/postal-codes.clipped.geojson',
-    '/postal-codes.geojson.gz',
-    '/postal-codes.geojson',
-  ]
-
-  for (const url of candidates) {
-    try {
-      const response = await fetch(url)
-      if (!response.ok) continue
-
-      if (url.endsWith('.gz')) {
-        const buffer = await response.arrayBuffer()
-        const decompressed = gunzipSync(new Uint8Array(buffer))
-        const text = new TextDecoder().decode(decompressed)
-        return JSON.parse(text) as PostalGeoJSON
-      }
-
-      return (await response.json()) as PostalGeoJSON
-    } catch (error) {
-      continue
-    }
-  }
-
-  throw new Error('Unable to load postal GeoJSON data')
-}
-
-async function loadPostalLabelGeoJSON(): Promise<PostalLabelGeoJSON> {
-  const candidates = [
-    '/postal-codes.labels.geojson.gz',
-    '/postal-codes.labels.geojson',
-  ]
-
-  for (const url of candidates) {
-    try {
-      const response = await fetch(url)
-      if (!response.ok) continue
-
-      if (url.endsWith('.gz')) {
-        const buffer = await response.arrayBuffer()
-        const decompressed = gunzipSync(new Uint8Array(buffer))
-        const text = new TextDecoder().decode(decompressed)
-        return JSON.parse(text) as PostalLabelGeoJSON
-      }
-
-      return (await response.json()) as PostalLabelGeoJSON
-    } catch (error) {
-      continue
-    }
-  }
-
-  throw new Error('Unable to load postal label data')
-}
-
-async function loadCoopStoresGeoJSON(): Promise<CoopGeoJSON> {
-  const response = await fetch('/coop_stores.geojson')
-  if (!response.ok) {
-    throw new Error(`Coop stores data request failed (${response.status})`)
-  }
-  return (await response.json()) as CoopGeoJSON
-}
-
-async function loadSamvirkelagRules(): Promise<SamvirkelagRules> {
-  try {
-    const response = await fetch('/samvirkelag-rules.json')
-    if (!response.ok) return DEFAULT_SAMVIRKELAG_RULES
-    const parsed = (await response.json()) as Partial<SamvirkelagRules>
-    return {
-      norskButikkdriftLabel: parsed.norskButikkdriftLabel || DEFAULT_SAMVIRKELAG_RULES.norskButikkdriftLabel,
-      nbasStoreNames: Array.isArray(parsed.nbasStoreNames) ? parsed.nbasStoreNames : [],
-      samvirkelagWhitelist: Array.isArray(parsed.samvirkelagWhitelist) ? parsed.samvirkelagWhitelist : [],
-    }
-  } catch {
-    return DEFAULT_SAMVIRKELAG_RULES
-  }
-}
-
-function normalizeForCompare(value: string | undefined) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLocaleLowerCase('nb-NO')
-}
-
-function stripDiacritics(value: string) {
-  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
-}
-
-function canonicalizeStoreName(value: string | undefined) {
-  let next = normalizeForCompare(value)
-  next = next.replace(/,\s*nbd[a-z0-9]*$/i, '')
-  next = stripDiacritics(next)
-  next = next
-    .replace(/\bcoop\s+extra\b/g, 'extra')
-    .replace(/\bcoop\s+mega\b/g, 'mega')
-    .replace(/\bcoop\s+prix\b/g, 'prix')
-    .replace(/\bcoop\s+obs\s+bygg\b/g, 'obs bygg')
-    .replace(/\bcoop\s+obs\b/g, 'obs')
-  next = next.replace(/[.,/\\-]/g, ' ')
-  return next.replace(/\s+/g, ' ').trim()
 }
 
 function App() {
@@ -260,7 +156,7 @@ function App() {
   )
   const normalizedNbdAs = useMemo(() => normalizeForCompare(NORSK_BUTIKKDRIFT_AS), [])
 
-  const isNbdStore = (props: CoopGeoJSON['features'][number]['properties']) => {
+  const isNbdStore = useCallback((props: CoopGeoJSON['features'][number]['properties']) => {
     if (props?.nbd_group === true) return true
 
     const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
@@ -272,9 +168,9 @@ function App() {
     if (normalizedSamvirkelag === normalizedNbdAs) return true
     if (normalizedSamvirkelag === normalizedNbdLabel) return true
     return normalizedNbasNameSet.has(normalizedName)
-  }
+  }, [normalizedWhitelistSet, normalizedNbdAs, normalizedNbdLabel, normalizedNbasNameSet])
 
-  const matchesSelectedSamvirkelag = (props: CoopGeoJSON['features'][number]['properties']) => {
+  const matchesSelectedSamvirkelag = useCallback((props: CoopGeoJSON['features'][number]['properties']) => {
     if (selectedSamvirkelag === 'Alle') return true
     if (selectedSamvirkelag === NBD_ALL_VALUE) return isNbdStore(props)
     if (selectedSamvirkelag.startsWith(NBD_CHILD_PREFIX)) {
@@ -284,7 +180,7 @@ function App() {
     }
     const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
     return samvirkelag === selectedSamvirkelag
-  }
+  }, [isNbdStore, selectedSamvirkelag])
 
   const samvirkelagMenuData = useMemo(() => {
     const allRegular = new Set<string>()
@@ -431,56 +327,51 @@ function App() {
     mergePostalCodes(rawValues, 'text')
   }
 
-  const handleCsvFile = (file: File) => {
-    const preferredHeaders = ['postnummer', 'postal_code', 'postcode', 'zip']
+  const handleCsvFile = async (file: File) => {
+    try {
+      const Papa = await loadPapa()
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (result: Papa.ParseResult<Record<string, string>>) => {
-        setImportError(null)
-        const originalFields = result.meta.fields || []
-        const fields = originalFields.map((field: string) => field?.toLowerCase().trim() || '')
-        const headerKey = preferredHeaders.find((candidate) => fields.includes(candidate))
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (result: { data: Record<string, string>[]; meta: { fields?: string[] } }) => {
+          setImportError(null)
+          const originalFields = result.meta.fields || []
+          const originalKey = findPostalHeaderKey(originalFields)
 
-        if (headerKey) {
-          const originalKey = originalFields[fields.indexOf(headerKey)] || headerKey
-          const values = (result.data as Record<string, string>[])
-            .map((row) => row[originalKey])
-            .filter(Boolean)
-          mergePostalCodes(values, 'csv', result.data.length)
-          return
-        }
+          if (originalKey) {
+            const values = extractValuesFromObjectRows(
+              result.data as Record<string, unknown>[],
+              originalKey,
+            )
+            mergePostalCodes(values, 'csv', result.data.length)
+            return
+          }
 
-        Papa.parse(file, {
-          header: false,
-          skipEmptyLines: true,
-          complete: (fallbackResult: Papa.ParseResult<unknown[]>) => {
-            setImportError(null)
-            const values: string[] = []
-            ;(fallbackResult.data as unknown[]).forEach((row) => {
-              if (Array.isArray(row)) {
-                row.forEach((cell) => values.push(String(cell)))
-              } else if (row && typeof row === 'object') {
-                Object.values(row as Record<string, unknown>).forEach((cell) => values.push(String(cell)))
-              } else if (row) {
-                values.push(String(row))
-              }
-            })
-            mergePostalCodes(values, 'csv', fallbackResult.data.length)
-          },
-        })
-      },
-      error: () => {
-        setImportError('Kunne ikke lese filen.')
-        setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
-      },
-    })
+          Papa.parse(file, {
+            header: false,
+            skipEmptyLines: true,
+            complete: (fallbackResult: { data: unknown[] }) => {
+              setImportError(null)
+              const values = flattenUnknownRows(fallbackResult.data as unknown[])
+              mergePostalCodes(values, 'csv', fallbackResult.data.length)
+            },
+          })
+        },
+        error: () => {
+          setImportError('Kunne ikke lese filen.')
+          setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
+        },
+      })
+    } catch {
+      setImportError('Kunne ikke lese CSV-filen.')
+      setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
+    }
   }
 
   const handleExcelFile = async (file: File) => {
-    const preferredHeaders = ['postnummer', 'postal_code', 'postcode', 'zip']
     try {
+      const XLSX = await loadXlsx()
       const buffer = await file.arrayBuffer()
       const workbook = XLSX.read(buffer, { type: 'array' })
 
@@ -489,8 +380,8 @@ function App() {
           const sheet = workbook.Sheets[name]
           const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
           if (!rows.length) continue
-          const keys = Object.keys(rows[0]).map((k) => k.toLowerCase().trim())
-          if (preferredHeaders.some((candidate) => keys.includes(candidate))) {
+          const originalKey = findPostalHeaderKey(Object.keys(rows[0]))
+          if (originalKey) {
             return { sheet, rows }
           }
         }
@@ -510,13 +401,9 @@ function App() {
         : XLSX.utils.sheet_to_json<Record<string, unknown>>(picked.sheet, { defval: '' })
 
       if (rows.length) {
-        const fields = Object.keys(rows[0]).map((k) => k.toLowerCase().trim())
-        const headerKey = preferredHeaders.find((candidate) => fields.includes(candidate))
-        if (headerKey) {
-          const originalKey = Object.keys(rows[0])[fields.indexOf(headerKey)] || headerKey
-          const values = rows
-            .map((row) => String(row[originalKey] ?? ''))
-            .filter(Boolean)
+        const originalKey = findPostalHeaderKey(Object.keys(rows[0]))
+        if (originalKey) {
+          const values = extractValuesFromObjectRows(rows, originalKey)
           setImportError(null)
           mergePostalCodes(values, 'csv', rows.length)
           return
@@ -528,8 +415,7 @@ function App() {
         blankrows: false,
         defval: '',
       })
-      const fallbackValues: string[] = []
-      matrix.forEach((row: (string | number | null)[]) => row.forEach((cell: string | number | null) => fallbackValues.push(String(cell ?? ''))))
+      const fallbackValues = flattenMatrix(matrix)
       setImportError(null)
       mergePostalCodes(fallbackValues, 'csv', matrix.length)
     } catch {
@@ -546,7 +432,7 @@ function App() {
       return
     }
     if (ext === 'csv') {
-      handleCsvFile(file)
+      await handleCsvFile(file)
       return
     }
     await handleExcelFile(file)
@@ -574,8 +460,9 @@ function App() {
     }
   }
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!highlightedPostalcodes.size) return
+    const saveAs = await loadSaveAs()
     const sorted = Array.from(highlightedPostalcodes).sort()
     const values = sorted.join(',')
     const csv = `\uFEFFpostnummer\n"${values}"`
@@ -583,8 +470,10 @@ function App() {
     saveAs(blob, 'postnummer.csv')
   }
 
-  const handleDownloadXlsx = () => {
+  const handleDownloadXlsx = async () => {
     if (!highlightedPostalcodes.size) return
+    const XLSX = await loadXlsx()
+    const saveAs = await loadSaveAs()
     const sorted = Array.from(highlightedPostalcodes).sort()
     const values = sorted.join(',')
     const worksheet = XLSX.utils.aoa_to_sheet([['postnummer'], [values]])
@@ -626,8 +515,23 @@ function App() {
 
     const handleResize = () => map.resize()
     window.addEventListener('resize', handleResize)
+    const styleLoadTimeout = window.setTimeout(() => {
+      setPostalLoadError('Kartgrunnlag kunne ikke lastes innen rimelig tid.')
+      setCoopLoadError('Butikkdata kunne ikke lastes fordi kartet ikke ble klart.')
+      setIsLoadingPostal(false)
+      setIsLoadingCoop(false)
+    }, 15000)
+
+    const handleMapError = (event: unknown) => {
+      const maybeError = event && typeof event === 'object' ? (event as { error?: unknown }).error : null
+      if (maybeError instanceof Error) {
+        setPostalLoadError((prev) => prev || maybeError.message)
+      }
+    }
+    map.on('error', handleMapError)
 
     map.on('load', async () => {
+      window.clearTimeout(styleLoadTimeout)
       setIsLoadingPostal(true)
       setPostalLoadError(null)
       setIsLoadingCoop(true)
@@ -680,6 +584,8 @@ function App() {
         try {
           labelData = await loadPostalLabelGeoJSON()
         } catch (error) {
+          // Keep fallback silent to preserve existing UI behavior.
+          void error
           labelData = null
         }
 
@@ -1021,15 +927,17 @@ function App() {
           const coordinates = (feature?.geometry as GeoJSON.Point | undefined)?.coordinates
           if (!coordinates) return
 
-          const content = `
-            <div style="font-family: 'Space Grotesk', sans-serif;">
-              <strong>${name}</strong><br />
-              ${address ? `<div>Adresse: ${address}</div>` : ''}
-              ${chainLabel ? `<div>Kjede: ${chainLabel}</div>` : ''}
-              ${samvirkelag ? `<div>Samvirkelag: ${samvirkelag}</div>` : ''}
-            </div>
-          `
-          popup.setLngLat(coordinates as [number, number]).setHTML(content).addTo(map)
+          popup
+            .setLngLat(coordinates as [number, number])
+            .setDOMContent(
+              buildStorePopupContent({
+                name,
+                address,
+                chainLabel,
+                samvirkelag,
+              }),
+            )
+            .addTo(map)
         })
 
         map.on('click', (event) => {
@@ -1109,7 +1017,9 @@ function App() {
     })
 
     return () => {
+      window.clearTimeout(styleLoadTimeout)
       window.removeEventListener('resize', handleResize)
+      map.off('error', handleMapError)
       map.remove()
       mapRef.current = null
     }
@@ -1294,11 +1204,13 @@ function App() {
     map.flyTo({ center: coords, zoom: 14, speed: 1.2 })
     new maplibregl.Popup({ closeButton: true, closeOnClick: true })
       .setLngLat(coords)
-      .setHTML(
-        `<div><strong>${name}</strong></div>` +
-          (address ? `<div>${address}</div>` : '') +
-          (chain ? `<div>Kjede: ${getChainLabel(chain)}</div>` : '') +
-          (samvirkelag ? `<div>Samvirkelag: ${samvirkelag}</div>` : ''),
+      .setDOMContent(
+        buildStorePopupContent({
+          name,
+          address,
+          chainLabel: chain ? getChainLabel(chain) : '',
+          samvirkelag,
+        }),
       )
       .addTo(map)
   }
@@ -1651,7 +1563,7 @@ function App() {
           <button
             className="primary-button"
             type="button"
-            onClick={handleDownload}
+            onClick={() => void handleDownload()}
             disabled={!highlightedPostalcodes.size}
           >
             Last ned CSV
@@ -1659,7 +1571,7 @@ function App() {
           <button
             className="primary-button"
             type="button"
-            onClick={handleDownloadXlsx}
+            onClick={() => void handleDownloadXlsx()}
             disabled={!highlightedPostalcodes.size}
           >
             Last ned XLSX

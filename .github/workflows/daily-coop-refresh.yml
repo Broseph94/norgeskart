@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: daily-coop-store-refresh
+  cancel-in-progress: true
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -35,17 +39,18 @@ jobs:
         env:
           COOP_CONCURRENCY: "6"
           COOP_REQUEST_DELAY_MS: "200"
+          COOP_MIN_EXPECTED_STORES: "900"
         run: npm run fetch:coop
 
       - name: Commit and Push if Changed
         run: |
-          if git diff --quiet -- app/public/coop_stores.geojson; then
+          if git diff --quiet -- app/public/coop_stores.geojson app/public/samvirkelag-rules.json; then
             echo "No store data changes detected."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/public/coop_stores.geojson
+          git add app/public/coop_stores.geojson app/public/samvirkelag-rules.json
           git commit -m "chore: daily coop store refresh"
           git push origin main
