@@ -1,108 +1,31 @@
 import {
-  useCallback,
-  useEffect,
-  useMemo,
   useRef,
   useState,
-  type ChangeEvent,
-  type DragEvent,
 } from 'react'
-import maplibregl, { type GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl'
+import { type Map as MapLibreMap } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './App.css'
-import { normalizePostnummer } from './utils/postnummer'
-import { booleanIntersects, circle as turfCircle, featureCollection, point as turfPoint, polygon as turfPolygon } from '@turf/turf'
 import {
   DEFAULT_SAMVIRKELAG_RULES,
-  loadCoopStoresGeoJSON,
-  loadPostalGeoJSON,
-  loadPostalLabelGeoJSON,
-  loadSamvirkelagRules,
   type CoopGeoJSON,
   type PostalGeoJSON,
-  type PostalLabelGeoJSON,
   type SamvirkelagRules,
 } from './utils/dataLoaders'
-import {
-  findPostalHeaderKey,
-  flattenMatrix,
-  flattenUnknownRows,
-  extractValuesFromObjectRows,
-} from './utils/importParsing'
-import { buildStorePopupContent } from './utils/mapPopups'
-import { canonicalizeStoreName, normalizeForCompare } from './utils/storeNormalization'
-
-type ImportSummary = {
-  source: 'text' | 'csv'
-  added: number
-  invalid: number
-  total: number
-}
-
-const NORSK_BUTIKKDRIFT_AS = 'NORSK BUTIKKDRIFT AS'
-const NBD_ALL_VALUE = '__NBD_ALL__'
-const NBD_CHILD_PREFIX = '__NBD_CHILD__::'
-type SelectionTool = 'none' | 'radius' | 'polygon'
-
-const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty'
-const NORWAY_CENTER: [number, number] = [10.7522, 59.9139]
-const SUPPORTED_IMPORT_EXTENSIONS = ['csv', 'xlsx', 'xls', 'xlsm', 'xlsb'] as const
-const CHAIN_OPTIONS = [
-  { id: 'prix', label: 'Coop Prix', color: '#f9da47' },
-  { id: 'extra', label: 'Coop Extra', color: '#eb1907' },
-  { id: 'mega', label: 'Coop Mega', color: '#164734' },
-  { id: 'obs', label: 'Obs', color: '#004992' },
-  { id: 'obsbygg', label: 'Obs Bygg', color: '#002855' },
-]
-
-const getChainLabel = (chainId: string) =>
-  CHAIN_OPTIONS.find((option) => option.id === chainId)?.label || chainId
-
-const loadPapa = async () => (await import('papaparse')).default
-const loadXlsx = async () => await import('xlsx')
-const loadSaveAs = async () => (await import('file-saver')).saveAs
-
-const CITY_LABELS: GeoJSON.FeatureCollection<GeoJSON.Point, { name: string }> = {
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      properties: { name: 'Oslo' },
-      geometry: { type: 'Point', coordinates: [10.7522, 59.9139] },
-    },
-    {
-      type: 'Feature',
-      properties: { name: 'Bergen' },
-      geometry: { type: 'Point', coordinates: [5.3221, 60.3913] },
-    },
-    {
-      type: 'Feature',
-      properties: { name: 'Stavanger' },
-      geometry: { type: 'Point', coordinates: [5.7331, 58.9690] },
-    },
-    {
-      type: 'Feature',
-      properties: { name: 'Kristiansand' },
-      geometry: { type: 'Point', coordinates: [7.9956, 58.1467] },
-    },
-    {
-      type: 'Feature',
-      properties: { name: 'Trondheim' },
-      geometry: { type: 'Point', coordinates: [10.3951, 63.4305] },
-    },
-    {
-      type: 'Feature',
-      properties: { name: 'Tromsø' },
-      geometry: { type: 'Point', coordinates: [18.9553, 69.6492] },
-    },
-  ],
-}
+import { type SelectionTool } from './constants/appConfig'
+import { Sidebar } from './components/Sidebar'
+import { usePostalImport } from './hooks/usePostalImport'
+import { useSelectionMapEffects } from './hooks/useSelectionMapEffects'
+import { useMapInitialization } from './hooks/useMapInitialization'
+import { useSamvirkelagFilter } from './hooks/useSamvirkelagFilter'
+import { useCoopMapFiltering } from './hooks/useCoopMapFiltering'
+import { useSelectionActions } from './hooks/useSelectionActions'
+import { useStoreSelection } from './hooks/useStoreSelection'
+import { usePostalHighlightLayer } from './hooks/usePostalHighlightLayer'
 
 function App() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const validPostnummerSetRef = useRef<Set<string>>(new Set())
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const samvirkelagMenuRef = useRef<HTMLDivElement | null>(null)
 
   const [highlightedPostalcodes, setHighlightedPostalcodes] = useState<Set<string>>(new Set())
@@ -110,24 +33,9 @@ function App() {
   const [postalLoadError, setPostalLoadError] = useState<string | null>(null)
   const [isLoadingCoop, setIsLoadingCoop] = useState(true)
   const [coopLoadError, setCoopLoadError] = useState<string | null>(null)
-
-  const [postalInput, setPostalInput] = useState('')
-  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
-  const [importError, setImportError] = useState<string | null>(null)
-  const [activeChains, setActiveChains] = useState<Record<string, boolean>>(() => ({
-    prix: true,
-    extra: true,
-    mega: true,
-    obs: true,
-    obsbygg: true,
-  }))
   const [coopStores, setCoopStores] = useState<CoopGeoJSON | null>(null)
   const [samvirkelagRules, setSamvirkelagRules] = useState<SamvirkelagRules>(DEFAULT_SAMVIRKELAG_RULES)
-  const [selectedSamvirkelag, setSelectedSamvirkelag] = useState('Alle')
   const [storeSearch, setStoreSearch] = useState('')
-  const [samvirkelagSearch, setSamvirkelagSearch] = useState('')
-  const [isSamvirkelagMenuOpen, setIsSamvirkelagMenuOpen] = useState(false)
-  const [isNbdExpanded, setIsNbdExpanded] = useState(false)
   const [postalData, setPostalData] = useState<PostalGeoJSON | null>(null)
   const [selectionTool, setSelectionTool] = useState<SelectionTool>('none')
   const [radiusMeters, setRadiusMeters] = useState(1000)
@@ -141,1444 +49,160 @@ function App() {
   const draggingVertexIndexRef = useRef<number | null>(null)
   const isDraggingVertexRef = useRef(false)
   const suppressMapClickUntilRef = useRef(0)
-
-  const normalizedWhitelistSet = useMemo(
-    () => new Set(samvirkelagRules.samvirkelagWhitelist.map((value) => normalizeForCompare(value))),
-    [samvirkelagRules.samvirkelagWhitelist],
-  )
-  const normalizedNbasNameSet = useMemo(
-    () => new Set(samvirkelagRules.nbasStoreNames.map((value) => canonicalizeStoreName(value))),
-    [samvirkelagRules.nbasStoreNames],
-  )
-  const normalizedNbdLabel = useMemo(
-    () => normalizeForCompare(samvirkelagRules.norskButikkdriftLabel),
-    [samvirkelagRules.norskButikkdriftLabel],
-  )
-  const normalizedNbdAs = useMemo(() => normalizeForCompare(NORSK_BUTIKKDRIFT_AS), [])
-
-  const isNbdStore = useCallback((props: CoopGeoJSON['features'][number]['properties']) => {
-    if (props?.nbd_group === true) return true
-
-    const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
-    const name = props?.name ? String(props.name) : ''
-    const normalizedSamvirkelag = normalizeForCompare(samvirkelag)
-    const normalizedName = canonicalizeStoreName(name)
-
-    if (normalizedWhitelistSet.has(normalizedSamvirkelag)) return false
-    if (normalizedSamvirkelag === normalizedNbdAs) return true
-    if (normalizedSamvirkelag === normalizedNbdLabel) return true
-    return normalizedNbasNameSet.has(normalizedName)
-  }, [normalizedWhitelistSet, normalizedNbdAs, normalizedNbdLabel, normalizedNbasNameSet])
-
-  const matchesSelectedSamvirkelag = useCallback((props: CoopGeoJSON['features'][number]['properties']) => {
-    if (selectedSamvirkelag === 'Alle') return true
-    if (selectedSamvirkelag === NBD_ALL_VALUE) return isNbdStore(props)
-    if (selectedSamvirkelag.startsWith(NBD_CHILD_PREFIX)) {
-      const childValue = selectedSamvirkelag.slice(NBD_CHILD_PREFIX.length)
-      const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
-      return isNbdStore(props) && samvirkelag === childValue
-    }
-    const samvirkelag = props?.samvirkelag ? String(props.samvirkelag) : ''
-    return samvirkelag === selectedSamvirkelag
-  }, [isNbdStore, selectedSamvirkelag])
-
-  const samvirkelagMenuData = useMemo(() => {
-    const allRegular = new Set<string>()
-    const nbdChildren = new Set<string>()
-
-    if (coopStores) {
-      coopStores.features.forEach((feature) => {
-        const props = feature.properties || {}
-        const samvirkelag = props.samvirkelag ? String(props.samvirkelag) : ''
-        if (!samvirkelag) return
-
-        if (isNbdStore(props)) {
-          const normalizedSam = normalizeForCompare(samvirkelag)
-          if (normalizedSam !== normalizedNbdAs && normalizedSam !== normalizedNbdLabel) {
-            nbdChildren.add(samvirkelag)
-          }
-          return
-        }
-
-        allRegular.add(samvirkelag)
-      })
-    }
-
-    const query = samvirkelagSearch.trim().toLowerCase()
-    const regularOptions = Array.from(allRegular).sort((a, b) => a.localeCompare(b, 'nb'))
-    const nbdChildOptions = Array.from(nbdChildren).sort((a, b) => a.localeCompare(b, 'nb'))
-
-    if (!query) {
-      return { regularOptions, nbdChildOptions }
-    }
-
-    const filteredRegular = regularOptions.filter((value) => value.toLowerCase().includes(query))
-    const filteredChildren = nbdChildOptions.filter((value) => value.toLowerCase().includes(query))
-    const parentMatches = samvirkelagRules.norskButikkdriftLabel.toLowerCase().includes(query)
-
-    return {
-      regularOptions: filteredRegular,
-      nbdChildOptions: parentMatches ? nbdChildOptions : filteredChildren,
-    }
-  }, [coopStores, isNbdStore, normalizedNbdAs, normalizedNbdLabel, samvirkelagRules.norskButikkdriftLabel, samvirkelagSearch])
-
-  const selectedSamvirkelagLabel = useMemo(() => {
-    if (selectedSamvirkelag === 'Alle') return 'Alle'
-    if (selectedSamvirkelag === NBD_ALL_VALUE) return samvirkelagRules.norskButikkdriftLabel
-    if (selectedSamvirkelag.startsWith(NBD_CHILD_PREFIX)) {
-      return `${samvirkelagRules.norskButikkdriftLabel} / ${selectedSamvirkelag.slice(NBD_CHILD_PREFIX.length)}`
-    }
-    return selectedSamvirkelag
-  }, [samvirkelagRules.norskButikkdriftLabel, selectedSamvirkelag])
-
-  const buildRadiusGeometry = (center: [number, number], meters: number) =>
-    turfCircle(center, meters, { units: 'meters', steps: 96 })
-
-  const buildDrawPolygon = (points: [number, number][]) => {
-    if (points.length < 3) return null
-    return turfPolygon([[...points, points[0]]])
-  }
-
-  const mergeHighlighted = (nextCodes: Set<string>) => {
-    if (!nextCodes.size) return
-    setHighlightedPostalcodes((prev) => {
-      const merged = new Set(prev)
-      nextCodes.forEach((code) => merged.add(code))
-      return merged
-    })
-  }
-
-  const selectPostcodesByGeometry = (geometry: GeoJSON.Feature<GeoJSON.Polygon>) => {
-    const matches = new Set<string>()
-    if (!postalData?.features?.length) return matches
-    postalData.features.forEach((feature) => {
-      const postnummer = normalizePostnummer(String(feature.properties?.postnummer || ''))
-      if (!postnummer || !feature.geometry) return
-      try {
-        if (booleanIntersects(feature as GeoJSON.Feature<GeoJSON.Geometry>, geometry)) {
-          matches.add(postnummer)
-        }
-      } catch {
-        return
-      }
-    })
-    return matches
-  }
-
-  const handleChainToggle = (chainId: string) => {
-    setActiveChains((prev) => ({
-      ...prev,
-      [chainId]: !prev[chainId],
-    }))
-  }
-
-  const mergePostalCodes = (rawValues: string[], source: ImportSummary['source'], totalRows = 0) => {
-    const validSet = validPostnummerSetRef.current
-    if (!validSet.size) {
-      setImportSummary({ source, added: 0, invalid: rawValues.length, total: totalRows || rawValues.length })
-      return
-    }
-
-    const uniqueValues = new Set<string>()
-    const validCodes: string[] = []
-    let invalidCount = 0
-
-    rawValues.forEach((value) => {
-      const normalized = normalizePostnummer(value)
-      if (!normalized) {
-        invalidCount += 1
-        return
-      }
-      if (uniqueValues.has(normalized)) return
-      uniqueValues.add(normalized)
-      if (validSet.has(normalized)) {
-        validCodes.push(normalized)
-      } else {
-        invalidCount += 1
-      }
-    })
-
-    let addedCount = 0
-    setHighlightedPostalcodes((prev) => {
-      const next = new Set(prev)
-      validCodes.forEach((code) => {
-        if (!next.has(code)) {
-          next.add(code)
-          addedCount += 1
-        }
-      })
-      return next
-    })
-
-    setImportSummary({
-      source,
-      added: addedCount,
-      invalid: invalidCount,
-      total: totalRows || rawValues.length,
-    })
-  }
-
-  const handleApplyPostalInput = () => {
-    const rawValues = postalInput
-      .split(/[\n,]+/)
-      .map((value) => value.trim())
-      .filter(Boolean)
-
-    mergePostalCodes(rawValues, 'text')
-  }
-
-  const handleCsvFile = async (file: File) => {
-    try {
-      const Papa = await loadPapa()
-
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (result: { data: Record<string, string>[]; meta: { fields?: string[] } }) => {
-          setImportError(null)
-          const originalFields = result.meta.fields || []
-          const originalKey = findPostalHeaderKey(originalFields)
-
-          if (originalKey) {
-            const values = extractValuesFromObjectRows(
-              result.data as Record<string, unknown>[],
-              originalKey,
-            )
-            mergePostalCodes(values, 'csv', result.data.length)
-            return
-          }
-
-          Papa.parse(file, {
-            header: false,
-            skipEmptyLines: true,
-            complete: (fallbackResult: { data: unknown[] }) => {
-              setImportError(null)
-              const values = flattenUnknownRows(fallbackResult.data as unknown[])
-              mergePostalCodes(values, 'csv', fallbackResult.data.length)
-            },
-          })
-        },
-        error: () => {
-          setImportError('Kunne ikke lese filen.')
-          setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
-        },
-      })
-    } catch {
-      setImportError('Kunne ikke lese CSV-filen.')
-      setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
-    }
-  }
-
-  const handleExcelFile = async (file: File) => {
-    try {
-      const XLSX = await loadXlsx()
-      const buffer = await file.arrayBuffer()
-      const workbook = XLSX.read(buffer, { type: 'array' })
-
-      const pickSheet = () => {
-        for (const name of workbook.SheetNames) {
-          const sheet = workbook.Sheets[name]
-          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
-          if (!rows.length) continue
-          const originalKey = findPostalHeaderKey(Object.keys(rows[0]))
-          if (originalKey) {
-            return { sheet, rows }
-          }
-        }
-        const fallbackName = workbook.SheetNames[0]
-        return fallbackName ? { sheet: workbook.Sheets[fallbackName], rows: [] as Record<string, unknown>[] } : null
-      }
-
-      const picked = pickSheet()
-      if (!picked?.sheet) {
-        setImportError('Kunne ikke lese filen.')
-        setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
-        return
-      }
-
-      const rows = picked.rows.length
-        ? picked.rows
-        : XLSX.utils.sheet_to_json<Record<string, unknown>>(picked.sheet, { defval: '' })
-
-      if (rows.length) {
-        const originalKey = findPostalHeaderKey(Object.keys(rows[0]))
-        if (originalKey) {
-          const values = extractValuesFromObjectRows(rows, originalKey)
-          setImportError(null)
-          mergePostalCodes(values, 'csv', rows.length)
-          return
-        }
-      }
-
-      const matrix = XLSX.utils.sheet_to_json<(string | number | null)[]>(picked.sheet, {
-        header: 1,
-        blankrows: false,
-        defval: '',
-      })
-      const fallbackValues = flattenMatrix(matrix)
-      setImportError(null)
-      mergePostalCodes(fallbackValues, 'csv', matrix.length)
-    } catch {
-      setImportError('Kunne ikke lese Excel-filen.')
-      setImportSummary({ source: 'csv', added: 0, invalid: 0, total: 0 })
-    }
-  }
-
-  const handleImportFile = async (file: File) => {
-    const ext = file.name.split('.').pop()?.toLowerCase() || ''
-    if (!SUPPORTED_IMPORT_EXTENSIONS.includes(ext as (typeof SUPPORTED_IMPORT_EXTENSIONS)[number])) {
-      setImportError('Filformat støttes ikke. Støttede formater er: .csv, .xlsx, .xls, .xlsm, .xlsb.')
-      setImportSummary(null)
-      return
-    }
-    if (ext === 'csv') {
-      await handleCsvFile(file)
-      return
-    }
-    await handleExcelFile(file)
-  }
-
-  const handleCsvChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    void handleImportFile(file)
-  }
-
-  const handleCsvDrop = (event: DragEvent<HTMLButtonElement>) => {
-    event.preventDefault()
-    const file = event.dataTransfer.files?.[0]
-    if (!file) return
-    void handleImportFile(file)
-  }
-
-  const handleClear = () => {
-    setHighlightedPostalcodes(new Set())
-    setImportSummary(null)
-    setPostalInput('')
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
-  const handleDownload = async () => {
-    if (!highlightedPostalcodes.size) return
-    const saveAs = await loadSaveAs()
-    const sorted = Array.from(highlightedPostalcodes).sort()
-    const values = sorted.join(',')
-    const csv = `\uFEFFpostnummer\n"${values}"`
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    saveAs(blob, 'postnummer.csv')
-  }
-
-  const handleDownloadXlsx = async () => {
-    if (!highlightedPostalcodes.size) return
-    const XLSX = await loadXlsx()
-    const saveAs = await loadSaveAs()
-    const sorted = Array.from(highlightedPostalcodes).sort()
-    const values = sorted.join(',')
-    const worksheet = XLSX.utils.aoa_to_sheet([['postnummer'], [values]])
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Postnummer')
-    const out = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([out], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
-    saveAs(blob, 'postnummer.xlsx')
-  }
-
-  useEffect(() => {
-    selectionToolRef.current = selectionTool
-  }, [selectionTool])
-
-  useEffect(() => {
-    radiusCenterRef.current = radiusCenter
-  }, [radiusCenter])
-
-  useEffect(() => {
-    polygonPointsRef.current = polygonPoints
-  }, [polygonPoints])
-
-  useEffect(() => {
-    if (mapRef.current || !mapContainerRef.current) return
-
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: MAP_STYLE_URL,
-      center: NORWAY_CENTER,
-      zoom: 4.6,
-      minZoom: 3,
-      maxZoom: 14,
-    })
-
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
-    mapRef.current = map
-
-    const handleResize = () => map.resize()
-    window.addEventListener('resize', handleResize)
-    const styleLoadTimeout = window.setTimeout(() => {
-      setPostalLoadError('Kartgrunnlag kunne ikke lastes innen rimelig tid.')
-      setCoopLoadError('Butikkdata kunne ikke lastes fordi kartet ikke ble klart.')
-      setIsLoadingPostal(false)
-      setIsLoadingCoop(false)
-    }, 15000)
-
-    const handleMapError = (event: unknown) => {
-      const maybeError = event && typeof event === 'object' ? (event as { error?: unknown }).error : null
-      if (maybeError instanceof Error) {
-        setPostalLoadError((prev) => prev || maybeError.message)
-      }
-    }
-    map.on('error', handleMapError)
-
-    map.on('load', async () => {
-      window.clearTimeout(styleLoadTimeout)
-      setIsLoadingPostal(true)
-      setPostalLoadError(null)
-      setIsLoadingCoop(true)
-      setCoopLoadError(null)
-
-      const getWaterLayerId = () => {
-        const layers = map.getStyle().layers ?? []
-        const waterLayer = layers.find((layer) => {
-          if (layer.type !== 'fill') return false
-          const id = layer.id.toLowerCase()
-          return id.includes('water') || id.includes('ocean') || id.includes('sea')
-        })
-        return waterLayer?.id
-      }
-
-      const waterLayerId = getWaterLayerId()
-
-      try {
-        if (!map.getSource('cityLabels')) {
-          map.addSource('cityLabels', {
-            type: 'geojson',
-            data: CITY_LABELS,
-          })
-        }
-
-        if (!map.getLayer('city-labels')) {
-          map.addLayer({
-            id: 'city-labels',
-            type: 'symbol',
-            source: 'cityLabels',
-            minzoom: 4,
-            layout: {
-              'text-field': ['get', 'name'],
-              'text-size': 14,
-              'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-              'text-offset': [0, 0.4],
-            },
-            paint: {
-              'text-color': '#1f2a37',
-              'text-halo-color': '#f8fafc',
-              'text-halo-width': 1,
-              'text-halo-blur': 0.6,
-            },
-          }, waterLayerId)
-        }
-
-        const data = await loadPostalGeoJSON()
-        setPostalData(data)
-        let labelData: PostalLabelGeoJSON | null = null
-        try {
-          labelData = await loadPostalLabelGeoJSON()
-        } catch (error) {
-          // Keep fallback silent to preserve existing UI behavior.
-          void error
-          labelData = null
-        }
-
-        const validSet = new Set<string>()
-        for (const feature of data.features ?? []) {
-          const raw = feature.properties?.postnummer ?? ''
-          const normalized = normalizePostnummer(String(raw))
-          if (normalized) {
-            validSet.add(normalized)
-          }
-        }
-        validPostnummerSetRef.current = validSet
-
-        if (!map.getSource('postalCodes')) {
-          map.addSource('postalCodes', {
-            type: 'geojson',
-            data,
-          })
-        }
-
-        if (!map.getSource('postalLabels') && labelData) {
-          map.addSource('postalLabels', {
-            type: 'geojson',
-            data: labelData,
-          })
-        }
-
-        if (!map.getLayer('postal-fill')) {
-          map.addLayer({
-            id: 'postal-fill',
-            type: 'fill',
-            source: 'postalCodes',
-            paint: {
-              'fill-color': '#8897a8',
-              'fill-opacity': 0.25,
-            },
-          }, waterLayerId)
-        }
-
-        if (!map.getLayer('postal-outline')) {
-          map.addLayer({
-            id: 'postal-outline',
-            type: 'line',
-            source: 'postalCodes',
-            paint: {
-              'line-color': '#3a4451',
-              'line-width': 0.6,
-              'line-opacity': 0.7,
-            },
-          }, waterLayerId)
-        }
-
-        if (!map.getLayer('postal-highlight')) {
-          map.addLayer({
-            id: 'postal-highlight',
-            type: 'fill',
-            source: 'postalCodes',
-            paint: {
-              'fill-color': '#ffb347',
-              'fill-opacity': 0.55,
-            },
-            filter: ['in', ['get', 'postnummer'], ['literal', []]],
-          }, waterLayerId)
-        }
-
-        if (!map.getLayer('postal-labels')) {
-          map.addLayer({
-            id: 'postal-labels',
-            type: 'symbol',
-            source: labelData ? 'postalLabels' : 'postalCodes',
-            minzoom: 6,
-            layout: {
-              'text-field': ['get', 'postnummer'],
-              'text-size': ['interpolate', ['linear'], ['zoom'], 6, 9, 9, 10, 12, 11],
-              'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
-              'text-allow-overlap': false,
-              'text-ignore-placement': false,
-              'text-optional': true,
-              'text-padding': 6,
-            },
-            paint: {
-              'text-color': '#111827',
-              'text-halo-color': '#ffffff',
-              'text-halo-width': 2,
-              'text-halo-blur': 1,
-            },
-          })
-        }
-
-        if (!map.getLayer('postal-labels-dense')) {
-          map.addLayer({
-            id: 'postal-labels-dense',
-            type: 'symbol',
-            source: labelData ? 'postalLabels' : 'postalCodes',
-            minzoom: 12,
-            layout: {
-              'text-field': ['get', 'postnummer'],
-              'text-size': ['interpolate', ['linear'], ['zoom'], 12, 11, 16, 14],
-              'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
-              'text-allow-overlap': true,
-              'text-ignore-placement': true,
-              'text-padding': 2,
-            },
-            paint: {
-              'text-color': '#111827',
-              'text-halo-color': '#ffffff',
-              'text-halo-width': 2,
-              'text-halo-blur': 1,
-            },
-          })
-        }
-
-        if (map.getLayer('postal-labels')) {
-          map.moveLayer('postal-labels')
-        }
-        if (map.getLayer('postal-labels-dense')) {
-          map.moveLayer('postal-labels-dense')
-        }
-
-        if (!map.getSource('selection-radius')) {
-          map.addSource('selection-radius', {
-            type: 'geojson',
-            data: featureCollection([]),
-          })
-        }
-
-        if (!map.getLayer('selection-radius-fill')) {
-          map.addLayer({
-            id: 'selection-radius-fill',
-            type: 'fill',
-            source: 'selection-radius',
-            paint: {
-              'fill-color': '#2563eb',
-              'fill-opacity': 0.15,
-            },
-          })
-        }
-
-        if (!map.getLayer('selection-radius-outline')) {
-          map.addLayer({
-            id: 'selection-radius-outline',
-            type: 'line',
-            source: 'selection-radius',
-            paint: {
-              'line-color': '#2563eb',
-              'line-width': 2,
-              'line-opacity': 0.8,
-            },
-          })
-        }
-
-        if (!map.getSource('selection-radius-center')) {
-          map.addSource('selection-radius-center', {
-            type: 'geojson',
-            data: featureCollection([]),
-          })
-        }
-
-        if (!map.getLayer('selection-radius-center')) {
-          map.addLayer({
-            id: 'selection-radius-center',
-            type: 'symbol',
-            source: 'selection-radius-center',
-            layout: {
-              'text-field': '⚑',
-              'text-size': 14,
-              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-            },
-            paint: {
-              'text-color': '#dc2626',
-              'text-halo-color': '#ffffff',
-              'text-halo-width': 1.5,
-            },
-          })
-        }
-
-        if (!map.getSource('selection-polygon')) {
-          map.addSource('selection-polygon', {
-            type: 'geojson',
-            data: featureCollection([]),
-          })
-        }
-
-        if (!map.getLayer('selection-polygon-fill')) {
-          map.addLayer({
-            id: 'selection-polygon-fill',
-            type: 'fill',
-            source: 'selection-polygon',
-            paint: {
-              'fill-color': '#0ea5e9',
-              'fill-opacity': 0.15,
-            },
-          })
-        }
-
-        if (!map.getLayer('selection-polygon-outline')) {
-          map.addLayer({
-            id: 'selection-polygon-outline',
-            type: 'line',
-            source: 'selection-polygon',
-            paint: {
-              'line-color': '#0284c7',
-              'line-width': 2,
-              'line-opacity': 0.9,
-            },
-          })
-        }
-
-        if (!map.getSource('selection-polygon-vertices')) {
-          map.addSource('selection-polygon-vertices', {
-            type: 'geojson',
-            data: featureCollection([]),
-          })
-        }
-
-        if (!map.getLayer('selection-polygon-vertices')) {
-          map.addLayer({
-            id: 'selection-polygon-vertices',
-            type: 'circle',
-            source: 'selection-polygon-vertices',
-            paint: {
-              'circle-radius': 4,
-              'circle-color': '#2563eb',
-              'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': 1.5,
-            },
-          })
-        }
-
-        if (!map.getSource('selection-polygon-line')) {
-          map.addSource('selection-polygon-line', {
-            type: 'geojson',
-            data: featureCollection([]),
-          })
-        }
-
-        if (!map.getLayer('selection-polygon-line')) {
-          map.addLayer({
-            id: 'selection-polygon-line',
-            type: 'line',
-            source: 'selection-polygon-line',
-            paint: {
-              'line-color': '#2563eb',
-              'line-width': 2,
-              'line-dasharray': [1, 1],
-            },
-          })
-        }
-
-        map.on('mouseenter', 'postal-fill', () => {
-          map.getCanvas().style.cursor = 'pointer'
-        })
-        map.on('mouseleave', 'postal-fill', () => {
-          map.getCanvas().style.cursor = ''
-        })
-
-        map.on('click', 'postal-fill', (event) => {
-          if (selectionToolRef.current !== 'none') return
-          const feature = event.features?.[0]
-          const raw = feature?.properties?.postnummer
-          const normalized = raw ? normalizePostnummer(String(raw)) : null
-          if (!normalized) return
-
-          setHighlightedPostalcodes((prev) => {
-            const next = new Set(prev)
-            if (next.has(normalized)) {
-              next.delete(normalized)
-            } else {
-              next.add(normalized)
-            }
-            return next
-          })
-        })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error loading postal data'
-        setPostalLoadError(message)
-      } finally {
-        setIsLoadingPostal(false)
-      }
-
-      try {
-        const rules = await loadSamvirkelagRules()
-        setSamvirkelagRules(rules)
-        const coopData = await loadCoopStoresGeoJSON()
-        setCoopStores(coopData)
-        if (!map.getSource('coopPrixStores')) {
-          map.addSource('coopPrixStores', {
-            type: 'geojson',
-            data: coopData,
-          })
-        }
-
-        if (!map.getLayer('coop-pins')) {
-          map.addLayer({
-            id: 'coop-pins',
-            type: 'circle',
-            source: 'coopPrixStores',
-            paint: {
-              'circle-color': [
-                'match',
-                ['get', 'chain'],
-                'prix',
-                CHAIN_OPTIONS[0].color,
-                'extra',
-                CHAIN_OPTIONS[1].color,
-                'mega',
-                CHAIN_OPTIONS[2].color,
-                'obs',
-                CHAIN_OPTIONS[3].color,
-                'obsbygg',
-                CHAIN_OPTIONS[4].color,
-                '#2563eb',
-              ],
-              'circle-radius': 5,
-              'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': 1,
-            },
-          })
-        }
-
-        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true })
-
-        map.on('mouseenter', 'coop-pins', () => {
-          map.getCanvas().style.cursor = 'pointer'
-        })
-        map.on('mouseleave', 'coop-pins', () => {
-          map.getCanvas().style.cursor = ''
-        })
-
-        map.on('click', 'coop-pins', (event) => {
-          if (selectionToolRef.current !== 'none') return
-          const feature = event.features?.[0]
-          const props = feature?.properties || {}
-          const name = props.name ? String(props.name) : 'Coop Prix'
-          const address = props.address ? String(props.address) : ''
-          const chain = props.chain ? String(props.chain) : ''
-          const chainLabel = chain ? getChainLabel(chain) : ''
-          const samvirkelag = props.samvirkelag ? String(props.samvirkelag) : ''
-          const coordinates = (feature?.geometry as GeoJSON.Point | undefined)?.coordinates
-          if (!coordinates) return
-
-          popup
-            .setLngLat(coordinates as [number, number])
-            .setDOMContent(
-              buildStorePopupContent({
-                name,
-                address,
-                chainLabel,
-                samvirkelag,
-              }),
-            )
-            .addTo(map)
-        })
-
-        map.on('click', (event) => {
-          if (Date.now() < suppressMapClickUntilRef.current) return
-          if (isDraggingVertexRef.current) return
-          if (selectionToolRef.current === 'radius') {
-            const center: [number, number] = [event.lngLat.lng, event.lngLat.lat]
-            setRadiusCenter(center)
-            return
-          }
-          if (selectionToolRef.current === 'polygon') {
-            const hitVertex = map.queryRenderedFeatures(event.point, {
-              layers: ['selection-polygon-vertices'],
-            })
-            if (hitVertex.length > 0) return
-            const point: [number, number] = [event.lngLat.lng, event.lngLat.lat]
-            setPolygonPoints((prev) => [...prev, point])
-            setIsPolygonDrawing(true)
-          }
-        })
-
-        map.on('mouseenter', 'selection-polygon-vertices', () => {
-          if (selectionToolRef.current === 'polygon') {
-            map.getCanvas().style.cursor = 'move'
-          }
-        })
-        map.on('mouseleave', 'selection-polygon-vertices', () => {
-          if (!isDraggingVertexRef.current) {
-            map.getCanvas().style.cursor = ''
-          }
-        })
-
-        map.on('mousedown', 'selection-polygon-vertices', (event) => {
-          if (selectionToolRef.current !== 'polygon') return
-          const feature = event.features?.[0]
-          const rawIndex = feature?.properties?.vertexIndex
-          const vertexIndex = typeof rawIndex === 'number' ? rawIndex : Number(rawIndex)
-          if (!Number.isFinite(vertexIndex)) return
-
-          draggingVertexIndexRef.current = vertexIndex
-          isDraggingVertexRef.current = true
-          suppressMapClickUntilRef.current = Date.now() + 300
-          map.dragPan.disable()
-          map.getCanvas().style.cursor = 'grabbing'
-        })
-
-        map.on('mousemove', (event) => {
-          if (!isDraggingVertexRef.current) return
-          const index = draggingVertexIndexRef.current
-          if (index == null) return
-          const nextPoint: [number, number] = [event.lngLat.lng, event.lngLat.lat]
-          setPolygonPoints((prev) => {
-            if (index < 0 || index >= prev.length) return prev
-            const next = [...prev]
-            next[index] = nextPoint
-            return next
-          })
-        })
-
-        const stopVertexDrag = () => {
-          if (!isDraggingVertexRef.current) return
-          isDraggingVertexRef.current = false
-          draggingVertexIndexRef.current = null
-          suppressMapClickUntilRef.current = Date.now() + 150
-          map.dragPan.enable()
-          map.getCanvas().style.cursor = ''
-        }
-
-        map.on('mouseup', stopVertexDrag)
-        map.on('mouseleave', stopVertexDrag)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Ukjent feil ved lasting av butikker'
-        setCoopLoadError(message)
-      } finally {
-        setIsLoadingCoop(false)
-      }
-    })
-
-    return () => {
-      window.clearTimeout(styleLoadTimeout)
-      window.removeEventListener('resize', handleResize)
-      map.off('error', handleMapError)
-      map.remove()
-      mapRef.current = null
-    }
-  }, [])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !map.getLayer('postal-highlight')) return
-
-    const values = Array.from(highlightedPostalcodes)
-    map.setFilter('postal-highlight', ['in', ['get', 'postnummer'], ['literal', values]])
-  }, [highlightedPostalcodes])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
-    if (selectionTool === 'polygon') {
-      map.doubleClickZoom.disable()
-      return
-    }
-    map.doubleClickZoom.enable()
-  }, [selectionTool])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
-    const source = map.getSource('selection-radius')
-    if (!source || !('setData' in source)) return
-    if (selectionTool === 'radius' && radiusCenter) {
-      const geometry = buildRadiusGeometry(radiusCenter, radiusMeters)
-      ;(source as GeoJSONSource).setData(featureCollection([geometry]))
-    } else {
-      ;(source as GeoJSONSource).setData(featureCollection([]))
-    }
-  }, [selectionTool, radiusCenter, radiusMeters])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
-    const source = map.getSource('selection-radius-center')
-    if (!source || !('setData' in source)) return
-    if (selectionTool === 'radius' && radiusCenter) {
-      ;(source as GeoJSONSource).setData(featureCollection([turfPoint(radiusCenter)]))
-    } else {
-      ;(source as GeoJSONSource).setData(featureCollection([]))
-    }
-  }, [selectionTool, radiusCenter])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
-    const polygonSource = map.getSource('selection-polygon')
-    const verticesSource = map.getSource('selection-polygon-vertices')
-    const lineSource = map.getSource('selection-polygon-line')
-    if (!polygonSource || !verticesSource || !lineSource) return
-    if (!('setData' in polygonSource) || !('setData' in verticesSource) || !('setData' in lineSource)) return
-
-    if (selectionTool === 'polygon') {
-      if (polygonPoints.length > 0) {
-        ;(verticesSource as GeoJSONSource).setData({
-          type: 'FeatureCollection',
-          features: polygonPoints.map((coords, vertexIndex) => ({
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: coords },
-            properties: { vertexIndex },
-          })),
-        })
-      } else {
-        ;(verticesSource as GeoJSONSource).setData(featureCollection([]))
-      }
-
-      if (polygonPoints.length >= 2) {
-        ;(lineSource as GeoJSONSource).setData({
-          type: 'FeatureCollection',
-          features: [
-            {
-              type: 'Feature',
-              geometry: { type: 'LineString', coordinates: polygonPoints },
-              properties: {},
-            },
-          ],
-        })
-      } else {
-        ;(lineSource as GeoJSONSource).setData(featureCollection([]))
-      }
-
-      const polygon = buildDrawPolygon(polygonPoints)
-      if (polygon) {
-        ;(polygonSource as GeoJSONSource).setData(featureCollection([polygon]))
-      } else {
-        ;(polygonSource as GeoJSONSource).setData(featureCollection([]))
-      }
-      return
-    }
-
-    ;(verticesSource as GeoJSONSource).setData(featureCollection([]))
-    ;(lineSource as GeoJSONSource).setData(featureCollection([]))
-    ;(polygonSource as GeoJSONSource).setData(featureCollection([]))
-  }, [selectionTool, polygonPoints])
-
-  useEffect(() => {
-    if (!isSamvirkelagMenuOpen) return
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!samvirkelagMenuRef.current) return
-      if (samvirkelagMenuRef.current.contains(event.target as Node)) return
-      setIsSamvirkelagMenuOpen(false)
-    }
-
-    window.addEventListener('mousedown', handleClickOutside)
-    return () => window.removeEventListener('mousedown', handleClickOutside)
-  }, [isSamvirkelagMenuOpen])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !map.getLayer('coop-pins')) return
-
-    const baseData = coopStores
-    if (!baseData) return
-
-    const enabledChains = CHAIN_OPTIONS.filter((option) => activeChains[option.id]).map(
-      (option) => option.id,
-    )
-    const searchLower = storeSearch.trim().toLowerCase()
-
-    const filtered = baseData.features.filter((feature) => {
-      const props = feature.properties || {}
-      const chain = props.chain || ''
-      const name = props.name || ''
-      const address = props.address || ''
-
-      if (enabledChains.length === 0) return false
-      if (!enabledChains.includes(chain)) return false
-      if (!matchesSelectedSamvirkelag(props)) return false
-      if (searchLower) {
-        const haystack = `${name} ${address}`.toLowerCase()
-        if (!haystack.includes(searchLower)) return false
-      }
-      return true
-    })
-
-    const source = map.getSource('coopPrixStores')
-    if (source && 'setData' in source) {
-      ;(source as GeoJSONSource).setData({ type: 'FeatureCollection', features: filtered })
-    }
-  }, [activeChains, coopStores, matchesSelectedSamvirkelag, storeSearch])
-
-  const storeSuggestions = useMemo(() => {
-    const baseData = coopStores
-    const query = storeSearch.trim().toLowerCase()
-    if (!baseData || !query) return []
-
-    const enabledChains = CHAIN_OPTIONS.filter((option) => activeChains[option.id]).map(
-      (option) => option.id,
-    )
-
-    const matches = baseData.features.filter((feature) => {
-      const props = feature.properties || {}
-      const chain = props.chain || ''
-      const name = props.name || ''
-      const address = props.address || ''
-      if (enabledChains.length && !enabledChains.includes(chain)) return false
-      if (!matchesSelectedSamvirkelag(props)) return false
-      const samvirkelag = props.samvirkelag || ''
-      const haystack = `${name} ${address} ${samvirkelag}`.toLowerCase()
-      return haystack.includes(query)
-    })
-
-    return matches.slice(0, 8)
-  }, [activeChains, coopStores, matchesSelectedSamvirkelag, storeSearch])
-
-  const handleSelectStore = (feature: CoopGeoJSON['features'][number]) => {
-    const map = mapRef.current
-    if (!map || feature.geometry.type !== 'Point') return
-    const coords = feature.geometry.coordinates as [number, number]
-    const props = feature.properties || {}
-    const name = props.name ? String(props.name) : 'Butikk'
-    const address = props.address ? String(props.address) : ''
-    const chain = props.chain ? String(props.chain) : ''
-    const samvirkelag = props.samvirkelag ? String(props.samvirkelag) : ''
-
-    map.flyTo({ center: coords, zoom: 14, speed: 1.2 })
-    new maplibregl.Popup({ closeButton: true, closeOnClick: true })
-      .setLngLat(coords)
-      .setDOMContent(
-        buildStorePopupContent({
-          name,
-          address,
-          chainLabel: chain ? getChainLabel(chain) : '',
-          samvirkelag,
-        }),
-      )
-      .addTo(map)
-  }
-
-  const handleStartRadiusMode = () => {
-    setSelectionTool('radius')
-    setRadiusCenter(null)
-    setPolygonPoints([])
-    setIsPolygonDrawing(false)
-  }
-
-  const handleStartPolygonMode = () => {
-    setSelectionTool('polygon')
-    setRadiusCenter(null)
-    setPolygonPoints([])
-    setIsPolygonDrawing(true)
-  }
-
-  const handleCancelSelectionTool = () => {
-    setSelectionTool('none')
-    setRadiusCenter(null)
-    setPolygonPoints([])
-    setIsPolygonDrawing(false)
-  }
-
-  const handleApplyRadiusSelection = () => {
-    if (!radiusCenter) return
-    const geometry = buildRadiusGeometry(radiusCenter, radiusMeters)
-    const matches = selectPostcodesByGeometry(geometry as GeoJSON.Feature<GeoJSON.Polygon>)
-    mergeHighlighted(matches)
-    setRadiusCenter(null)
-  }
-
-  const handleCompletePolygonSelection = () => {
-    const geometry = buildDrawPolygon(polygonPoints)
-    if (!geometry) return
-    const matches = selectPostcodesByGeometry(geometry as GeoJSON.Feature<GeoJSON.Polygon>)
-    mergeHighlighted(matches)
-    setPolygonPoints([])
-    setIsPolygonDrawing(false)
-  }
-
-  const handleUndoPolygonPoint = () => {
-    setPolygonPoints((prev) => prev.slice(0, -1))
-  }
+  const {
+    postalInput,
+    setPostalInput,
+    importSummary,
+    importError,
+    fileInputRef,
+    handleApplyPostalInput,
+    handleCsvChange,
+    handleCsvDrop,
+    handleClear,
+    handleDownloadCsv,
+    handleDownloadXlsx,
+  } = usePostalImport({
+    validPostnummerSetRef,
+    highlightedPostalcodes,
+    setHighlightedPostalcodes,
+  })
+  const {
+    selectedSamvirkelag,
+    samvirkelagSearch,
+    setSamvirkelagSearch,
+    isSamvirkelagMenuOpen,
+    toggleSamvirkelagMenu,
+    samvirkelagMenuData,
+    selectedSamvirkelagLabel,
+    isNbdExpanded,
+    handleSelectAllSamvirkelag,
+    handleSelectRegularSamvirkelag,
+    handleSelectNbdParent,
+    handleSelectNbdChild,
+    matchesSelectedSamvirkelag,
+  } = useSamvirkelagFilter({
+    coopStores,
+    samvirkelagRules,
+    samvirkelagMenuRef,
+  })
+  const {
+    activeChains,
+    handleChainToggle,
+    storeSuggestions,
+  } = useCoopMapFiltering({
+    mapRef,
+    coopStores,
+    storeSearch,
+    matchesSelectedSamvirkelag,
+  })
+  const { handleSelectStore } = useStoreSelection({ mapRef })
+  const {
+    handleStartRadiusMode,
+    handleStartPolygonMode,
+    handleCancelSelectionTool,
+    handleApplyRadiusSelection,
+    handleCompletePolygonSelection,
+    handleUndoPolygonPoint,
+  } = useSelectionActions({
+    postalData,
+    radiusCenter,
+    radiusMeters,
+    polygonPoints,
+    setSelectionTool,
+    setRadiusCenter,
+    setPolygonPoints,
+    setIsPolygonDrawing,
+    setHighlightedPostalcodes,
+  })
+
+  useSelectionMapEffects({
+    mapRef,
+    selectionTool,
+    selectionToolRef,
+    radiusCenter,
+    radiusCenterRef,
+    radiusMeters,
+    polygonPoints,
+    polygonPointsRef,
+  })
+  useMapInitialization({
+    mapContainerRef,
+    mapRef,
+    validPostnummerSetRef,
+    selectionToolRef,
+    suppressMapClickUntilRef,
+    isDraggingVertexRef,
+    draggingVertexIndexRef,
+    setPostalLoadError,
+    setCoopLoadError,
+    setIsLoadingPostal,
+    setIsLoadingCoop,
+    setPostalData,
+    setHighlightedPostalcodes,
+    setSamvirkelagRules,
+    setCoopStores,
+    setRadiusCenter,
+    setPolygonPoints,
+    setIsPolygonDrawing,
+  })
+  usePostalHighlightLayer({ mapRef, highlightedPostalcodes })
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h1>Norgeskart</h1>
-        </div>
-
-        <div className="sidebar-section">
-          <div className="status">
-            {isLoadingPostal && <span>Laster postsoner...</span>}
-            {postalLoadError && <span className="status-error">{postalLoadError}</span>}
-          </div>
-          <div className="status">
-            {isLoadingCoop && <span>Laster butikker...</span>}
-            {coopLoadError && <span className="status-error">{coopLoadError}</span>}
-          </div>
-        </div>
-
-        <div className="sidebar-section">
-          <div className="section-label">Butikker</div>
-          <div className="toggle-list">
-            {CHAIN_OPTIONS.map((option) => (
-              <label key={option.id} className="toggle-item">
-                <input
-                  type="checkbox"
-                  checked={activeChains[option.id]}
-                  onChange={() => handleChainToggle(option.id)}
-                />
-                <span className="toggle-swatch" style={{ backgroundColor: option.color }} />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
-          <label className="section-label" htmlFor="store-search">
-            Søk i butikker
-          </label>
-          <div className="search-wrapper">
-            <input
-              id="store-search"
-              className="select-input"
-              type="text"
-              value={storeSearch}
-              onChange={(event) => setStoreSearch(event.target.value)}
-              placeholder="Søk på butikknavn eller adresse"
-            />
-            {storeSearch.trim() && (
-              <div className="search-suggestions">
-                {storeSuggestions.length === 0 && (
-                  <div className="search-empty">Ingen treff.</div>
-                )}
-                {storeSuggestions.map((feature) => {
-                  const props = feature.properties || {}
-                  const name = props.name ? String(props.name) : 'Butikk'
-                  const samvirkelag = props.samvirkelag ? String(props.samvirkelag) : ''
-                  const address = props.address ? String(props.address) : ''
-                  const key = `${name}-${address}-${samvirkelag}`
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      className="search-card"
-                      onClick={() => handleSelectStore(feature)}
-                    >
-                      <div className="search-card-title">{name}</div>
-                      {samvirkelag && <div className="search-card-sub">Samvirkelag: {samvirkelag}</div>}
-                      {address && <div className="search-card-sub">{address}</div>}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-          <label className="section-label" htmlFor="samvirkelag-search">
-            Samvirkelag
-          </label>
-          <div className="search-wrapper samvirkelag-menu" ref={samvirkelagMenuRef}>
-            <input
-              id="samvirkelag-search"
-              className="select-input"
-              type="text"
-              value={samvirkelagSearch}
-              onChange={(event) => setSamvirkelagSearch(event.target.value)}
-              placeholder="Søk samvirkelag"
-            />
-            <button
-              type="button"
-              className="select-input samvirkelag-trigger"
-              onClick={() => setIsSamvirkelagMenuOpen((prev) => !prev)}
-            >
-              <span>{selectedSamvirkelagLabel}</span>
-              <span aria-hidden="true">▾</span>
-            </button>
-            {isSamvirkelagMenuOpen && (
-              <div className="samvirkelag-dropdown">
-                <button
-                  type="button"
-                  className={`samvirkelag-option ${selectedSamvirkelag === 'Alle' ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedSamvirkelag('Alle')
-                    setIsSamvirkelagMenuOpen(false)
-                  }}
-                >
-                  Alle
-                </button>
-
-                {samvirkelagMenuData.regularOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={`samvirkelag-option ${selectedSamvirkelag === option ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedSamvirkelag(option)
-                      setIsSamvirkelagMenuOpen(false)
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
-
-                {(samvirkelagMenuData.nbdChildOptions.length > 0 ||
-                  samvirkelagRules.norskButikkdriftLabel.toLowerCase().includes(samvirkelagSearch.trim().toLowerCase())) && (
-                  <div className="samvirkelag-group">
-                    <button
-                      type="button"
-                      className={`samvirkelag-option samvirkelag-group-parent ${selectedSamvirkelag === NBD_ALL_VALUE ? 'active' : ''}`}
-                      onClick={() => {
-                        setSelectedSamvirkelag(NBD_ALL_VALUE)
-                        setIsNbdExpanded((prev) => !prev)
-                      }}
-                    >
-                      <span>{samvirkelagRules.norskButikkdriftLabel}</span>
-                      <span aria-hidden="true">{isNbdExpanded ? '▾' : '▸'}</span>
-                    </button>
-                    {isNbdExpanded && (
-                      <div className="samvirkelag-group-children">
-                        {samvirkelagMenuData.nbdChildOptions.map((option) => {
-                          const value = `${NBD_CHILD_PREFIX}${option}`
-                          return (
-                            <button
-                              key={value}
-                              type="button"
-                              className={`samvirkelag-option samvirkelag-child ${selectedSamvirkelag === value ? 'active' : ''}`}
-                              onClick={() => {
-                                setSelectedSamvirkelag(value)
-                                setIsSamvirkelagMenuOpen(false)
-                              }}
-                            >
-                              {option}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="sidebar-section">
-          <div className="section-label">Geografisk markering</div>
-          <div className="tool-button-row">
-            <button
-              type="button"
-              className={`secondary-button tool-button ${selectionTool === 'radius' ? 'tool-button-active' : ''}`}
-              onClick={handleStartRadiusMode}
-            >
-              Radius
-            </button>
-            <button
-              type="button"
-              className={`secondary-button tool-button ${selectionTool === 'polygon' ? 'tool-button-active' : ''}`}
-              onClick={handleStartPolygonMode}
-            >
-              Polygon
-            </button>
-            <button
-              type="button"
-              className="secondary-button tool-button"
-              onClick={handleCancelSelectionTool}
-            >
-              Avbryt
-            </button>
-          </div>
-
-          {selectionTool === 'radius' && (
-            <div className="tool-panel">
-              <label className="section-label" htmlFor="radius-slider">
-                Radius: {radiusMeters >= 1000 ? `${(radiusMeters / 1000).toFixed(1)} km` : `${radiusMeters} m`}
-              </label>
-              <input
-                id="radius-slider"
-                type="range"
-                min={100}
-                max={50000}
-                step={100}
-                value={radiusMeters}
-                onChange={(event) => setRadiusMeters(Number(event.target.value))}
-              />
-              <button
-                type="button"
-                className="primary-button"
-                onClick={handleApplyRadiusSelection}
-                disabled={!radiusCenter}
-              >
-                Marker postkoder
-              </button>
-            </div>
-          )}
-
-          {selectionTool === 'polygon' && (
-            <div className="tool-panel">
-              <div className="status">Punkter: {polygonPoints.length} {isPolygonDrawing ? '(tegning aktiv)' : ''}</div>
-              <div className="tool-button-row">
-                <button
-                  type="button"
-                  className="primary-button tool-button"
-                  onClick={handleCompletePolygonSelection}
-                  disabled={polygonPoints.length < 3}
-                >
-                  Marker postkoder
-                </button>
-                <button
-                  type="button"
-                  className="secondary-button tool-button"
-                  onClick={handleUndoPolygonPoint}
-                  disabled={!polygonPoints.length}
-                >
-                  Fjern siste punkt
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="sidebar-section">
-          <label className="section-label" htmlFor="postal-input">
-            Legg til postkoder
-          </label>
-          <textarea
-            id="postal-input"
-            className="postal-input"
-            rows={4}
-            value={postalInput}
-            onChange={(event) => setPostalInput(event.target.value)}
-            placeholder="Eksempel: 0150, 0151, 0152"
-          />
-          <button className="primary-button" type="button" onClick={handleApplyPostalInput}>
-            Legg til
-          </button>
-        </div>
-
-        <div className="sidebar-section">
-          <label className="section-label" htmlFor="csv-input">
-            Importer excel fil
-          </label>
-          <input
-            id="csv-input"
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xlsx,.xls,.xlsm,.xlsb"
-            onChange={handleCsvChange}
-            className="file-input-hidden"
-          />
-          <button
-            type="button"
-            className="secondary-button file-dropzone"
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={handleCsvDrop}
-          >
-            Last opp fil
-          </button>
-          {importError && <div className="status-error">{importError}</div>}
-        </div>
-
-        {importSummary && (
-          <div className="sidebar-section">
-            <div className="summary-card">
-              <div className="summary-title">
-                {importSummary.source === 'text' ? 'Oppsummering (tekst)' : 'Oppsummering (CSV)'}
-              </div>
-              <div className="summary-row">
-                <span>Lagt til</span>
-                <strong>{importSummary.added}</strong>
-              </div>
-              <div className="summary-row">
-                <span>Ugyldige</span>
-                <strong>{importSummary.invalid}</strong>
-              </div>
-              <div className="summary-row">
-                <span>Totalt</span>
-                <strong>{importSummary.total}</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="sidebar-section actions">
-          <button className="secondary-button" type="button" onClick={handleClear}>
-            Reset
-          </button>
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() => void handleDownload()}
-            disabled={!highlightedPostalcodes.size}
-          >
-            Last ned CSV
-          </button>
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() => void handleDownloadXlsx()}
-            disabled={!highlightedPostalcodes.size}
-          >
-            Last ned XLSX
-          </button>
-        </div>
-
-      </aside>
+      <Sidebar
+        isLoadingPostal={isLoadingPostal}
+        postalLoadError={postalLoadError}
+        isLoadingCoop={isLoadingCoop}
+        coopLoadError={coopLoadError}
+        activeChains={activeChains}
+        onToggleChain={handleChainToggle}
+        storeSearch={storeSearch}
+        onStoreSearchChange={setStoreSearch}
+        storeSuggestions={storeSuggestions}
+        onSelectStore={handleSelectStore}
+        samvirkelagSearch={samvirkelagSearch}
+        onSamvirkelagSearchChange={setSamvirkelagSearch}
+        samvirkelagMenuRef={samvirkelagMenuRef}
+        isSamvirkelagMenuOpen={isSamvirkelagMenuOpen}
+        onToggleSamvirkelagMenu={toggleSamvirkelagMenu}
+        selectedSamvirkelag={selectedSamvirkelag}
+        selectedSamvirkelagLabel={selectedSamvirkelagLabel}
+        samvirkelagMenuData={samvirkelagMenuData}
+        samvirkelagRules={samvirkelagRules}
+        isNbdExpanded={isNbdExpanded}
+        onSelectAllSamvirkelag={handleSelectAllSamvirkelag}
+        onSelectRegularSamvirkelag={handleSelectRegularSamvirkelag}
+        onSelectNbdParent={handleSelectNbdParent}
+        onSelectNbdChild={handleSelectNbdChild}
+        selectionTool={selectionTool}
+        onStartRadiusMode={handleStartRadiusMode}
+        onStartPolygonMode={handleStartPolygonMode}
+        onCancelSelectionTool={handleCancelSelectionTool}
+        radiusMeters={radiusMeters}
+        onRadiusMetersChange={setRadiusMeters}
+        radiusCenter={radiusCenter}
+        onApplyRadiusSelection={handleApplyRadiusSelection}
+        polygonPoints={polygonPoints}
+        isPolygonDrawing={isPolygonDrawing}
+        onCompletePolygonSelection={handleCompletePolygonSelection}
+        onUndoPolygonPoint={handleUndoPolygonPoint}
+        postalInput={postalInput}
+        onPostalInputChange={setPostalInput}
+        onApplyPostalInput={handleApplyPostalInput}
+        fileInputRef={fileInputRef}
+        onCsvChange={handleCsvChange}
+        onCsvDrop={handleCsvDrop}
+        importError={importError}
+        importSummary={importSummary}
+        onClear={handleClear}
+        onDownloadCsv={() => {
+          void handleDownloadCsv()
+        }}
+        onDownloadXlsx={() => {
+          void handleDownloadXlsx()
+        }}
+        hasHighlightedPostalcodes={highlightedPostalcodes.size > 0}
+      />
 
       <main className="map-panel">
         <div ref={mapContainerRef} className="map-container" />

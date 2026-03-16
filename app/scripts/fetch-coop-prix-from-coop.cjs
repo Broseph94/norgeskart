@@ -22,7 +22,23 @@ const SAMVIRKELAG_RULES_PUBLIC_PATH = path.resolve(__dirname, '..', 'public', 's
 const USER_AGENT = 'Norgeskart Coop store scraper (educational use)'
 const DEFAULT_API_URL =
   'https://www.coop.no/api/content/butikker?coop_chain=Mega&coop_chain=Prix&coop_chain=Obs&coop_chain=Extra&coop_chain=ObsBygg&notify=true'
-const COOP_API_URL = process.env.COOP_API_URL || DEFAULT_API_URL
+
+function readUrlEnv(name, defaultValue) {
+  const rawValue = process.env[name]
+  if (rawValue == null || rawValue === '') return defaultValue
+  let parsed
+  try {
+    parsed = new URL(rawValue)
+  } catch {
+    throw new Error(`Invalid URL for ${name}: ${rawValue}`)
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`${name} must use http or https protocol; received: ${parsed.protocol}`)
+  }
+  return parsed.toString()
+}
+
+const COOP_API_URL = readUrlEnv('COOP_API_URL', DEFAULT_API_URL)
 
 function readIntEnv(name, defaultValue, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = {}) {
   const rawValue = process.env[name]
@@ -69,11 +85,14 @@ async function fetchWithRetry(url, options = {}, meta = 'request') {
     try {
       const response = await fetchWithTimeout(url, options, REQUEST_TIMEOUT_MS)
       if (!response.ok) {
-        throw new Error(`${meta} failed with status ${response.status}`)
+        const error = new Error(`${meta} failed with status ${response.status}`)
+        error.retryable = response.status >= 500 || response.status === 429 || response.status === 408
+        throw error
       }
       return response
     } catch (error) {
       lastError = error
+      if (error && typeof error === 'object' && error.retryable === false) break
       if (attempt >= FETCH_RETRIES) break
       const backoff = FETCH_RETRY_BASE_DELAY_MS * 2 ** attempt
       await sleep(backoff)
@@ -526,7 +545,11 @@ function sortAndDedupeFeatures(features) {
 }
 
 function buildApiUrl(url) {
-  return url.includes('count=') ? url : `${url}&count=5000`
+  const parsed = new URL(url)
+  if (!parsed.searchParams.has('count')) {
+    parsed.searchParams.set('count', '5000')
+  }
+  return parsed.toString()
 }
 
 async function run() {
@@ -612,8 +635,10 @@ async function run() {
           longitude: Number(coords[0]),
         }
         const recalcFeature = toFeature(finalDetails, matchReport, references)
-        cache[current.url] = recalcFeature
-        markCacheDirty()
+        if (JSON.stringify(cachedFeature) !== JSON.stringify(recalcFeature)) {
+          cache[current.url] = recalcFeature
+          markCacheDirty()
+        }
         features.push(recalcFeature)
       } else {
         const html = await fetchHtml(current.url)
