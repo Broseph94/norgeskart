@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: daily-coop-store-refresh
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -35,17 +39,36 @@ jobs:
         env:
           COOP_CONCURRENCY: "6"
           COOP_REQUEST_DELAY_MS: "200"
+          COOP_MIN_EXPECTED_STORES: "900"
         run: npm run fetch:coop
 
+      - name: Validate Refreshed Data
+        working-directory: app
+        run: npm run test
+
       - name: Commit and Push if Changed
+        if: github.ref == 'refs/heads/main'
         run: |
-          if git diff --quiet -- app/public/coop_stores.geojson; then
+          if git diff --quiet -- app/public/coop_stores.geojson app/public/samvirkelag-rules.json; then
             echo "No store data changes detected."
             exit 0
           fi
 
+          mapfile -t changed_files < <(git diff --name-only)
+          for file in "${changed_files[@]}"; do
+            case "$file" in
+              app/public/coop_stores.geojson|app/public/samvirkelag-rules.json)
+                ;;
+              *)
+                echo "Unexpected changed file in refresh workflow: $file"
+                exit 1
+                ;;
+            esac
+          done
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/public/coop_stores.geojson
-          git commit -m "chore: daily coop store refresh"
-          git push origin main
+          git add app/public/coop_stores.geojson app/public/samvirkelag-rules.json
+          git commit -m "chore: daily coop store refresh [skip ci]"
+          git pull --ff-only origin main
+          git push origin HEAD:main

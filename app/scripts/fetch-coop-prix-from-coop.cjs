@@ -1,7 +1,15 @@
-/* eslint-disable no-console */
 const fs = require('fs')
 const path = require('path')
 const cheerio = require('cheerio')
+const {
+  addressTokens,
+  canonicalizeAddress,
+  canonicalizeStoreName,
+  extractZipFromAddress,
+  inferChainFromName,
+  normalizeChainId,
+  normalizeForCompare,
+} = require(path.resolve(__dirname, '..', 'shared', 'store-normalization.cjs'))
 
 const OUTPUT_PATH = path.resolve(__dirname, '..', 'public', 'coop_stores.geojson')
 const CACHE_DIR = path.resolve(__dirname, '..', '.cache')
@@ -12,176 +20,200 @@ const NBAS_REFERENCE_PATH = path.resolve(__dirname, '..', 'config', 'nbas-store-
 const SAMVIRKELAG_RULES_PUBLIC_PATH = path.resolve(__dirname, '..', 'public', 'samvirkelag-rules.json')
 
 const USER_AGENT = 'Norgeskart Coop store scraper (educational use)'
-const MAX_STORES = Number(process.env.COOP_MAX_STORES || 0)
-const LIST_HTML_PATH = process.env.COOP_LIST_PATH
-const DEFAULT_API_URL = 'https://www.coop.no/api/content/butikker?coop_chain=Mega&coop_chain=Prix&coop_chain=Obs&coop_chain=Extra&coop_chain=ObsBygg&notify=true'
-const COOP_API_URL = process.env.COOP_API_URL || DEFAULT_API_URL
-const CONCURRENCY = Number(process.env.COOP_CONCURRENCY || 6)
-const REQUEST_DELAY_MS = Number(process.env.COOP_REQUEST_DELAY_MS || 200)
+const DEFAULT_API_URL =
+  'https://www.coop.no/api/content/butikker?coop_chain=Mega&coop_chain=Prix&coop_chain=Obs&coop_chain=Extra&coop_chain=ObsBygg&notify=true'
 
-const CHAINS = [
-  { id: 'prix', query: 'Prix', label: 'Coop Prix' },
-  { id: 'extra', query: 'Extra', label: 'Coop Extra' },
-  { id: 'mega', query: 'Mega', label: 'Coop Mega' },
-  { id: 'obs', query: 'Obs', label: 'Obs' },
-  { id: 'obsbygg', query: 'ObsBygg', label: 'Obs Bygg' },
-]
-
-function normalizeForCompare(value) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLocaleLowerCase('nb-NO')
+function readUrlEnv(name, defaultValue) {
+  const rawValue = process.env[name]
+  if (rawValue == null || rawValue === '') return defaultValue
+  let parsed
+  try {
+    parsed = new URL(rawValue)
+  } catch {
+    throw new Error(`Invalid URL for ${name}: ${rawValue}`)
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`${name} must use http or https protocol; received: ${parsed.protocol}`)
+  }
+  return parsed.toString()
 }
 
-function stripDiacritics(value) {
-  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+const COOP_API_URL = readUrlEnv('COOP_API_URL', DEFAULT_API_URL)
+
+function readIntEnv(name, defaultValue, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = {}) {
+  const rawValue = process.env[name]
+  if (rawValue == null || rawValue === '') return defaultValue
+  const parsed = Number(rawValue)
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) {
+    throw new Error(`Invalid integer for ${name}: ${rawValue}`)
+  }
+  if (parsed < min || parsed > max) {
+    throw new Error(`${name} must be between ${min} and ${max}; received ${parsed}`)
+  }
+  return parsed
 }
 
-function canonicalizeStoreName(value) {
-  let next = normalizeForCompare(value)
-  next = next.replace(/,\s*nbd[a-z0-9]*$/i, '')
-  next = stripDiacritics(next)
-  next = next
-    .replace(/\bcoop\s+extra\b/g, 'extra')
-    .replace(/\bcoop\s+mega\b/g, 'mega')
-    .replace(/\bcoop\s+prix\b/g, 'prix')
-    .replace(/\bcoop\s+obs\s+bygg\b/g, 'obs bygg')
-    .replace(/\bcoop\s+obs\b/g, 'obs')
-  next = next.replace(/[.,/\\-]/g, ' ')
-  return next.replace(/\s+/g, ' ').trim()
+const MAX_STORES = readIntEnv('COOP_MAX_STORES', 0, { min: 0, max: 50000 })
+const CONCURRENCY = readIntEnv('COOP_CONCURRENCY', 6, { min: 1, max: 32 })
+const REQUEST_DELAY_MS = readIntEnv('COOP_REQUEST_DELAY_MS', 200, { min: 0, max: 10000 })
+const REQUEST_TIMEOUT_MS = readIntEnv('COOP_REQUEST_TIMEOUT_MS', 15000, { min: 1000, max: 120000 })
+const FETCH_RETRIES = readIntEnv('COOP_FETCH_RETRIES', 2, { min: 0, max: 10 })
+const FETCH_RETRY_BASE_DELAY_MS = readIntEnv('COOP_FETCH_RETRY_BASE_DELAY_MS', 400, {
+  min: 100,
+  max: 30000,
+})
+const MIN_EXPECTED_STORES = readIntEnv('COOP_MIN_EXPECTED_STORES', 0, { min: 0, max: 10000 })
+const CACHE_SAVE_EVERY = readIntEnv('COOP_CACHE_SAVE_EVERY', 50, { min: 1, max: 5000 })
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function inferChainFromName(value) {
-  const canonical = canonicalizeStoreName(value)
-  if (canonical.startsWith('extra ')) return 'extra'
-  if (canonical.startsWith('mega ')) return 'mega'
-  if (canonical.startsWith('prix ')) return 'prix'
-  if (canonical.startsWith('obs bygg ')) return 'obsbygg'
-  if (canonical.startsWith('obs ')) return 'obs'
-  return ''
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
-function extractZipFromAddress(value) {
-  const match = String(value || '').match(/\b(\d{4})\b/)
-  return match ? match[1] : ''
+async function fetchWithRetry(url, options = {}, meta = 'request') {
+  let lastError = null
+  for (let attempt = 0; attempt <= FETCH_RETRIES; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(url, options, REQUEST_TIMEOUT_MS)
+      if (!response.ok) {
+        const error = new Error(`${meta} failed with status ${response.status}`)
+        error.retryable = response.status >= 500 || response.status === 429 || response.status === 408
+        throw error
+      }
+      return response
+    } catch (error) {
+      lastError = error
+      if (error && typeof error === 'object' && error.retryable === false) break
+      if (attempt >= FETCH_RETRIES) break
+      const backoff = FETCH_RETRY_BASE_DELAY_MS * 2 ** attempt
+      await sleep(backoff)
+    }
+  }
+  throw lastError || new Error(`${meta} failed`)
 }
 
-function canonicalizeAddress(value) {
-  let next = normalizeForCompare(value)
-  next = stripDiacritics(next)
-  next = next
-    .replace(/\bgt\.\b/g, 'gate')
-    .replace(/\bgt\b/g, 'gate')
-    .replace(/\bvn\.\b/g, 'veien')
-    .replace(/\bvn\b/g, 'veien')
-  next = next.replace(/[.,/\\-]/g, ' ')
-  return next.replace(/\s+/g, ' ').trim()
+function cleanText(text) {
+  return text.replace(/\s+/g, ' ').trim()
 }
 
-function addressTokens(value) {
-  return canonicalizeAddress(value)
-    .split(' ')
-    .map((token) => token.trim())
-    .filter((token) => token.length > 1 && /[a-z0-9]/.test(token))
+function atomicWriteFile(targetPath, content) {
+  const dir = path.dirname(targetPath)
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+  const tempPath = path.join(
+    dir,
+    `.${path.basename(targetPath)}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.tmp`,
+  )
+  fs.writeFileSync(tempPath, content)
+  fs.renameSync(tempPath, targetPath)
+}
+
+function atomicWriteJson(targetPath, value, spaces = 0) {
+  atomicWriteFile(targetPath, JSON.stringify(value, null, spaces))
+}
+
+function safeReadJson(filePath, fallbackValue) {
+  if (!fs.existsSync(filePath)) return fallbackValue
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+  } catch {
+    return fallbackValue
+  }
 }
 
 function loadSamvirkelagRules() {
-  if (!fs.existsSync(SAMVIRKELAG_RULES_PATH)) {
-    return {
-      norskButikkdriftLabel: 'Norsk Butikkdrift',
-      samvirkelagWhitelistMap: new Map(),
-    }
+  const fallback = {
+    norskButikkdriftLabel: 'Norsk Butikkdrift',
+    samvirkelagWhitelistMap: new Map(),
+  }
+  const parsed = safeReadJson(SAMVIRKELAG_RULES_PATH, null)
+  if (!parsed) return fallback
+
+  const norskButikkdriftLabel =
+    typeof parsed?.norskButikkdriftLabel === 'string' && parsed.norskButikkdriftLabel.trim()
+      ? parsed.norskButikkdriftLabel.trim()
+      : fallback.norskButikkdriftLabel
+
+  const samvirkelagWhitelistMap = new Map()
+  if (Array.isArray(parsed?.samvirkelagWhitelist)) {
+    parsed.samvirkelagWhitelist.forEach((value) => {
+      const clean = String(value || '').trim()
+      if (!clean) return
+      samvirkelagWhitelistMap.set(normalizeForCompare(clean), clean)
+    })
   }
 
-  try {
-    const parsed = JSON.parse(fs.readFileSync(SAMVIRKELAG_RULES_PATH, 'utf8'))
-    const norskButikkdriftLabel =
-      typeof parsed?.norskButikkdriftLabel === 'string' && parsed.norskButikkdriftLabel.trim()
-        ? parsed.norskButikkdriftLabel.trim()
-        : 'Norsk Butikkdrift'
-
-    const samvirkelagWhitelistMap = new Map()
-    if (Array.isArray(parsed?.samvirkelagWhitelist)) {
-      parsed.samvirkelagWhitelist.forEach((value) => {
-        const clean = String(value || '').trim()
-        if (!clean) return
-        samvirkelagWhitelistMap.set(normalizeForCompare(clean), clean)
-      })
-    }
-
-    return { norskButikkdriftLabel, samvirkelagWhitelistMap }
-  } catch (error) {
-    console.warn(`Could not read ${SAMVIRKELAG_RULES_PATH}: ${error.message || error}`)
-    return {
-      norskButikkdriftLabel: 'Norsk Butikkdrift',
-      samvirkelagWhitelistMap: new Map(),
-    }
-  }
+  return { norskButikkdriftLabel, samvirkelagWhitelistMap }
 }
-
-const SAMVIRKELAG_RULES = loadSamvirkelagRules()
 
 function loadNbasReference() {
-  if (!fs.existsSync(NBAS_REFERENCE_PATH)) {
+  const parsed = safeReadJson(NBAS_REFERENCE_PATH, null)
+  if (!parsed) {
     return {
       records: [],
       byChainZip: new Map(),
     }
   }
 
-  try {
-    const parsed = JSON.parse(fs.readFileSync(NBAS_REFERENCE_PATH, 'utf8'))
-    const records = Array.isArray(parsed?.records) ? parsed.records : []
-    const normalized = records
-      .map((row) => {
-        const chainId = normalizeChainId(String(row.chain_id || row.chain_raw || '')) || inferChainFromName(String(row.name_raw || ''))
-        const zip = String(row.zip || '').trim()
-        const nameCanonical = canonicalizeStoreName(String(row.name_canonical || row.name_raw || ''))
-        const addressCanonical = canonicalizeAddress(String(row.address_canonical || row.address_raw || ''))
-        return {
-          name_raw: String(row.name_raw || ''),
-          address_raw: String(row.address_raw || ''),
-          chain_id: chainId,
-          zip,
-          name_canonical: nameCanonical,
-          address_canonical: addressCanonical,
-          address_tokens: addressTokens(String(row.address_raw || row.address_canonical || '')),
-        }
-      })
-      .filter((row) => row.chain_id && row.zip)
-
-    const byChainZip = new Map()
-    normalized.forEach((row) => {
-      const key = `${row.chain_id}|${row.zip}`
-      const list = byChainZip.get(key) || []
-      list.push(row)
-      byChainZip.set(key, list)
+  const records = Array.isArray(parsed?.records) ? parsed.records : []
+  const normalized = records
+    .map((row) => {
+      const chainId =
+        normalizeChainId(String(row.chain_id || row.chain_raw || '')) ||
+        inferChainFromName(String(row.name_raw || ''))
+      const zip = String(row.zip || '').trim()
+      const nameCanonical = canonicalizeStoreName(String(row.name_canonical || row.name_raw || ''))
+      const addressCanonical = canonicalizeAddress(
+        String(row.address_canonical || row.address_raw || ''),
+      )
+      return {
+        name_raw: String(row.name_raw || ''),
+        address_raw: String(row.address_raw || ''),
+        chain_id: chainId,
+        zip,
+        name_canonical: nameCanonical,
+        address_canonical: addressCanonical,
+        address_tokens: addressTokens(String(row.address_raw || row.address_canonical || '')),
+      }
     })
+    .filter((row) => row.chain_id && row.zip)
 
-    return { records: normalized, byChainZip }
-  } catch (error) {
-    console.warn(`Could not read ${NBAS_REFERENCE_PATH}: ${error.message || error}`)
-    return {
-      records: [],
-      byChainZip: new Map(),
-    }
-  }
+  const byChainZip = new Map()
+  normalized.forEach((row) => {
+    const key = `${row.chain_id}|${row.zip}`
+    const existing = byChainZip.get(key) || []
+    existing.push(row)
+    byChainZip.set(key, existing)
+  })
+
+  return { records: normalized, byChainZip }
 }
-
-const NBAS_REFERENCE = loadNbasReference()
 
 function syncSamvirkelagRulesToPublic() {
   if (!fs.existsSync(SAMVIRKELAG_RULES_PATH)) return
-  fs.copyFileSync(SAMVIRKELAG_RULES_PATH, SAMVIRKELAG_RULES_PUBLIC_PATH)
+  const payload = fs.readFileSync(SAMVIRKELAG_RULES_PATH, 'utf8')
+  atomicWriteFile(SAMVIRKELAG_RULES_PUBLIC_PATH, payload)
 }
 
-function classifySamvirkelag(details, report) {
+function classifySamvirkelag(details, report, references) {
+  const { samvirkelagRules, nbasReference } = references
   const { name, samvirkelag: samvirkelagRaw, chain, address } = details
   const normalizedSamvirkelag = normalizeForCompare(samvirkelagRaw)
-  if (normalizedSamvirkelag && SAMVIRKELAG_RULES.samvirkelagWhitelistMap.has(normalizedSamvirkelag)) {
+
+  if (
+    normalizedSamvirkelag &&
+    samvirkelagRules.samvirkelagWhitelistMap.has(normalizedSamvirkelag)
+  ) {
     return {
-      samvirkelag: SAMVIRKELAG_RULES.samvirkelagWhitelistMap.get(normalizedSamvirkelag),
+      samvirkelag: samvirkelagRules.samvirkelagWhitelistMap.get(normalizedSamvirkelag),
       nbd_group: false,
     }
   }
@@ -202,7 +234,7 @@ function classifySamvirkelag(details, report) {
     }
   }
 
-  const chainZipCandidates = NBAS_REFERENCE.byChainZip.get(`${normalizedChain}|${zip}`) || []
+  const chainZipCandidates = nbasReference.byChainZip.get(`${normalizedChain}|${zip}`) || []
   if (!chainZipCandidates.length) {
     report.unmatched_total += 1
     return {
@@ -294,77 +326,23 @@ function classifySamvirkelag(details, report) {
 }
 
 async function fetchHtml(url) {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      'Accept-Language': 'no,en;q=0.8',
+  const response = await fetchWithRetry(
+    url,
+    {
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Accept-Language': 'no,en;q=0.8',
+      },
     },
-  })
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url} (${response.status})`)
-  }
+    `store page request (${url})`,
+  )
   return await response.text()
 }
 
-function buildBaseUrl(query) {
-  return `https://www.coop.no/butikker?coop_chain=${encodeURIComponent(query)}`
-}
-
-function extractMaxPage(html) {
-  const matches = [...html.matchAll(/[?&](?:p|page)=(\d+)/g)].map((match) => Number(match[1]))
-  const max = matches.length ? Math.max(...matches) : 1
-  return Number.isFinite(max) && max > 0 ? max : 1
-}
-
-function buildPageUrl(baseUrl, page) {
-  if (page <= 1) return baseUrl
-  const separator = baseUrl.includes('?') ? '&' : '?'
-  return `${baseUrl}${separator}p=${page}`
-}
-
-function extractStoreLinks(html) {
-  const $ = cheerio.load(html)
-  const links = new Set()
-
-  $('a[href^="/butikker/"]').each((_, element) => {
-    const href = $(element).attr('href') || ''
-    if (/\/butikker\//i.test(href)) {
-      links.add(`https://www.coop.no${href.split('#')[0]}`)
-    }
-  })
-
-  if (!links.size) {
-    const matches = [...html.matchAll(/\/butikker\/[^"'<\s]+/g)].map((match) => match[0])
-    matches.forEach((path) => links.add(`https://www.coop.no${path.split('#')[0]}`))
-  }
-
-  return Array.from(links)
-}
-
-function cleanText(text) {
-  return text.replace(/\s+/g, ' ').trim()
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function loadCache() {
-  if (!fs.existsSync(CACHE_PATH)) return {}
-  try {
-    return JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'))
-  } catch (error) {
-    return {}
-  }
-}
-
-function saveCache(cache) {
-  if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true })
-  fs.writeFileSync(CACHE_PATH, JSON.stringify(cache, null, 2))
-}
-
 function parseJsonLd(html) {
-  const matches = [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)]
+  const matches = [
+    ...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi),
+  ]
   for (const match of matches) {
     const raw = match[1].trim()
     if (!raw) continue
@@ -387,7 +365,7 @@ function parseJsonLd(html) {
           }
         }
       }
-    } catch (error) {
+    } catch {
       continue
     }
   }
@@ -420,7 +398,7 @@ function parseInitialData(html) {
         cooperativeName: page?.cooperativeName || '',
       }
     }
-  } catch (error) {
+  } catch {
     return null
   }
   return null
@@ -436,21 +414,10 @@ function parseGoogleMapsLink(html) {
   }
 }
 
-function normalizeChainId(raw) {
-  const value = raw.toLowerCase()
-  if (value.includes('prix')) return 'prix'
-  if (value.includes('extra')) return 'extra'
-  if (value.includes('mega')) return 'mega'
-  if (value.includes('obs bygg') || value.includes('bygg')) return 'obsbygg'
-  if (value.includes('obs')) return 'obs'
-  return ''
-}
-
 function extractFromApiPayload(payload) {
   if (payload && Array.isArray(payload.storeList)) return payload.storeList
   const candidates = []
-  const maybeArray = Array.isArray(payload) ? payload : null
-  if (maybeArray) return maybeArray
+  if (Array.isArray(payload)) return payload
 
   const stack = [payload]
   while (stack.length) {
@@ -477,7 +444,10 @@ function normalizeStoreFromApi(item) {
 
   const chainName = item.chainDisplayName || item.chainName || item.chain || ''
   const theme = item.theme || ''
-  const chain = normalizeChainId(String(chainName)) || normalizeChainId(String(theme)) || normalizeChainId(String(name))
+  const chain =
+    normalizeChainId(String(chainName)) ||
+    normalizeChainId(String(theme)) ||
+    normalizeChainId(String(name))
   const samvirkelag = item.cooperativeName || item.cooperative || ''
   const url = item.url ? `https://www.coop.no${item.url}` : ''
 
@@ -490,8 +460,17 @@ function normalizeStoreFromApi(item) {
   }
 }
 
-function toFeature(details, report) {
-  const classified = classifySamvirkelag(details, report)
+function dedupeStoresByUrl(stores) {
+  const byUrl = new Map()
+  stores.forEach((store) => {
+    if (!store.url) return
+    if (!byUrl.has(store.url)) byUrl.set(store.url, store)
+  })
+  return Array.from(byUrl.values()).sort((a, b) => a.url.localeCompare(b.url, 'nb'))
+}
+
+function toFeature(details, report, references) {
+  const classified = classifySamvirkelag(details, report, references)
   return {
     type: 'Feature',
     geometry: {
@@ -512,14 +491,7 @@ function toFeature(details, report) {
 function extractStoreDetails(html, chainFallback) {
   const $ = cheerio.load(html)
   const name = cleanText($('h1').first().text()) || chainFallback.label
-
-  const selectors = [
-    'address',
-    '[itemprop="address"]',
-    '.store-address',
-    '.address',
-    '.dv.l9.eq',
-  ]
+  const selectors = ['address', '[itemprop="address"]', '.store-address', '.address', '.dv.l9.eq']
 
   let address = ''
   for (const selector of selectors) {
@@ -533,12 +505,8 @@ function extractStoreDetails(html, chainFallback) {
   const jsonLd = parseJsonLd(html)
   const initialData = parseInitialData(html)
   const googleCoords = parseGoogleMapsLink(html)
-
-  const latitude =
-    jsonLd?.latitude ?? initialData?.latitude ?? googleCoords?.latitude ?? null
-  const longitude =
-    jsonLd?.longitude ?? initialData?.longitude ?? googleCoords?.longitude ?? null
-
+  const latitude = jsonLd?.latitude ?? initialData?.latitude ?? googleCoords?.latitude ?? null
+  const longitude = jsonLd?.longitude ?? initialData?.longitude ?? googleCoords?.longitude ?? null
   const chainName = initialData?.chainName || jsonLd?.chainName || chainFallback.label
   const chainId = normalizeChainId(chainName) || chainFallback.id
 
@@ -552,55 +520,76 @@ function extractStoreDetails(html, chainFallback) {
   }
 }
 
-async function getStoreLinksForChain(chain) {
-  console.log(`Fetching store list for ${chain.label}...`)
-  let allLinks = new Set()
+function loadCache() {
+  return safeReadJson(CACHE_PATH, {})
+}
 
-  if (LIST_HTML_PATH && fs.existsSync(LIST_HTML_PATH) && chain.id === 'prix') {
-    console.log(`Using local list HTML: ${LIST_HTML_PATH}`)
-    const html = fs.readFileSync(LIST_HTML_PATH, 'utf8')
-    allLinks = new Set(extractStoreLinks(html))
-  } else {
-    const baseUrl = buildBaseUrl(chain.query)
-    const firstPageHtml = await fetchHtml(baseUrl)
-    const maxPage = extractMaxPage(firstPageHtml)
+function sortAndDedupeFeatures(features) {
+  const bySource = new Map()
+  features.forEach((feature) => {
+    const source = String(feature?.properties?.source || '')
+    if (!source) return
+    if (!bySource.has(source)) bySource.set(source, feature)
+  })
+  return Array.from(bySource.values()).sort((a, b) => {
+    const sourceA = String(a?.properties?.source || '')
+    const sourceB = String(b?.properties?.source || '')
+    if (sourceA !== sourceB) return sourceA.localeCompare(sourceB, 'nb')
+    const chainA = String(a?.properties?.chain || '')
+    const chainB = String(b?.properties?.chain || '')
+    if (chainA !== chainB) return chainA.localeCompare(chainB, 'nb')
+    const nameA = String(a?.properties?.name || '')
+    const nameB = String(b?.properties?.name || '')
+    return nameA.localeCompare(nameB, 'nb')
+  })
+}
 
-    allLinks = new Set(extractStoreLinks(firstPageHtml))
-
-    for (let page = 2; page <= maxPage; page += 1) {
-      const html = await fetchHtml(buildPageUrl(baseUrl, page))
-      extractStoreLinks(html).forEach((link) => allLinks.add(link))
-    }
+function buildApiUrl(url) {
+  const parsed = new URL(url)
+  if (!parsed.searchParams.has('count')) {
+    parsed.searchParams.set('count', '5000')
   }
-
-  return Array.from(allLinks)
+  return parsed.toString()
 }
 
 async function run() {
   syncSamvirkelagRulesToPublic()
+  const samvirkelagRules = loadSamvirkelagRules()
+  const nbasReference = loadNbasReference()
+  const references = { samvirkelagRules, nbasReference }
+
   console.log('Fetching store list from API...')
-  const apiUrl = COOP_API_URL.includes('count=')
-    ? COOP_API_URL
-    : `${COOP_API_URL}&count=5000`
-  const apiResponse = await fetch(apiUrl, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      'Accept-Language': 'no,en;q=0.8',
+  const apiResponse = await fetchWithRetry(
+    buildApiUrl(COOP_API_URL),
+    {
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Accept-Language': 'no,en;q=0.8',
+      },
     },
-  })
-  if (!apiResponse.ok) {
-    throw new Error(`API request failed (${apiResponse.status})`)
-  }
+    'store list API request',
+  )
   const payload = await apiResponse.json()
   const candidates = extractFromApiPayload(payload)
 
-  const normalizedStores = candidates
-    .map((item) => normalizeStoreFromApi(item))
-    .filter((item) => item && item.chain && item.url)
+  const normalizedStores = dedupeStoresByUrl(
+    candidates
+      .map((item) => normalizeStoreFromApi(item))
+      .filter((item) => item && item.chain && item.url),
+  )
+
+  const tasks = []
+  let count = 0
+  for (const store of normalizedStores) {
+    count += 1
+    if (MAX_STORES && count > MAX_STORES) break
+    tasks.push(store)
+  }
+
+  console.log(`Processing ${tasks.length} store pages with concurrency ${CONCURRENCY}...`)
 
   const cache = loadCache()
   const features = []
-  const tasks = []
   const matchReport = {
     matched_by_chain_zip_name: 0,
     matched_by_chain_zip_address: 0,
@@ -611,23 +600,25 @@ async function run() {
     unresolved_samples: [],
   }
 
-  let count = 0
-  for (const store of normalizedStores) {
-    count += 1
-    if (MAX_STORES && count > MAX_STORES) break
-    tasks.push(store)
+  let cacheDirtyCount = 0
+  let cacheWriteChain = Promise.resolve()
+  const markCacheDirty = () => {
+    cacheDirtyCount += 1
+  }
+  const persistCache = async (force = false) => {
+    if (!force && cacheDirtyCount < CACHE_SAVE_EVERY) return
+    cacheDirtyCount = 0
+    cacheWriteChain = cacheWriteChain.then(() => {
+      atomicWriteJson(CACHE_PATH, cache, 2)
+    })
+    await cacheWriteChain
   }
 
-  console.log(`Processing ${tasks.length} store pages with concurrency ${CONCURRENCY}...`)
-
-  let inFlight = 0
   let index = 0
-
   async function processNext() {
     if (index >= tasks.length) return
     const current = tasks[index]
     index += 1
-    inFlight += 1
 
     try {
       if (cache[current.url]) {
@@ -643,8 +634,11 @@ async function run() {
           latitude: Number(coords[1]),
           longitude: Number(coords[0]),
         }
-        const recalcFeature = toFeature(finalDetails, matchReport)
-        cache[current.url] = recalcFeature
+        const recalcFeature = toFeature(finalDetails, matchReport, references)
+        if (JSON.stringify(cachedFeature) !== JSON.stringify(recalcFeature)) {
+          cache[current.url] = recalcFeature
+          markCacheDirty()
+        }
         features.push(recalcFeature)
       } else {
         const html = await fetchHtml(current.url)
@@ -665,17 +659,17 @@ async function run() {
             latitude,
             longitude,
           }
-          const feature = toFeature(finalDetails, matchReport)
+          const feature = toFeature(finalDetails, matchReport, references)
           cache[current.url] = feature
+          markCacheDirty()
           features.push(feature)
         }
-        saveCache(cache)
         await sleep(REQUEST_DELAY_MS)
       }
+
+      await persistCache(false)
     } catch (error) {
       console.warn(`Failed to process ${current.url}: ${error.message || error}`)
-    } finally {
-      inFlight -= 1
     }
   }
 
@@ -685,24 +679,43 @@ async function run() {
       console.log(`Progress: ${features.length}/${tasks.length}`)
     }
   })
-
   await Promise.all(workers)
+  await persistCache(true)
+
+  const stableFeatures = sortAndDedupeFeatures(features)
+  if (MIN_EXPECTED_STORES > 0 && stableFeatures.length < MIN_EXPECTED_STORES) {
+    throw new Error(
+      `Refusing to write coop store data. Expected at least ${MIN_EXPECTED_STORES} stores, got ${stableFeatures.length}.`,
+    )
+  }
 
   const geojson = {
     type: 'FeatureCollection',
-    features,
+    features: stableFeatures,
   }
 
-  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(geojson))
-  console.log(`Wrote ${features.length} Coop store features to ${OUTPUT_PATH}`)
-  saveCache(cache)
-  fs.writeFileSync(MATCH_REPORT_PATH, JSON.stringify(matchReport, null, 2))
+  atomicWriteJson(OUTPUT_PATH, geojson)
+  atomicWriteJson(MATCH_REPORT_PATH, matchReport, 2)
+  console.log(`Wrote ${stableFeatures.length} Coop store features to ${OUTPUT_PATH}`)
   console.log(
     `Samvirkelag match report: chain+zip+name=${matchReport.matched_by_chain_zip_name}, chain+zip+address=${matchReport.matched_by_chain_zip_address}, namePrefix=${matchReport.matched_by_name_prefix_fallback}, addressTokens=${matchReport.matched_by_address_token_fallback}, ambiguous=${matchReport.ambiguous_unresolved}, unmatched=${matchReport.unmatched_total}`,
   )
 }
 
-run().catch((error) => {
-  console.error(error)
-  process.exit(1)
-})
+module.exports = {
+  classifySamvirkelag,
+  extractFromApiPayload,
+  dedupeStoresByUrl,
+  loadNbasReference,
+  loadSamvirkelagRules,
+  normalizeStoreFromApi,
+  readIntEnv,
+  sortAndDedupeFeatures,
+}
+
+if (require.main === module) {
+  run().catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+}

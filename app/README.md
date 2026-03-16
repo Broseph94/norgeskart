@@ -1,73 +1,88 @@
-# React + TypeScript + Vite
+# Norgeskart App Runbook
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interactive map app for Norwegian postal areas and Coop store filtering/export.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node `24` (see repository `.nvmrc`)
+- npm
 
-## React Compiler
+## Local Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd app
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Build and preview production output:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+npm run build
+npm run preview
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Quality Gates
+
+```bash
+npm run lint
+npm run test
+```
+
+Optional Playwright smoke test:
+
+```bash
+ENABLE_E2E=1 npm run test:e2e
+```
+
+## Data Pipelines
+
+- Refresh Coop store data:
+
+```bash
+npm run fetch:coop
+```
+
+Useful environment variables:
+
+- `COOP_CONCURRENCY` (default `6`)
+- `COOP_REQUEST_DELAY_MS` (default `200`)
+- `COOP_REQUEST_TIMEOUT_MS` (default `15000`)
+- `COOP_FETCH_RETRIES` (default `2`)
+- `COOP_FETCH_RETRY_BASE_DELAY_MS` (default `400`)
+- `COOP_MIN_EXPECTED_STORES` (default `0`, recommended in CI)
+
+- Convert raw postal JSON to GeoJSON:
+
+```bash
+npm run convert:postal
+```
+
+- Clip/dissolve/build label data for postal polygons:
+
+```bash
+npm run clip:postal
+```
+
+## Dataset Conventions
+
+- Runtime favors dissolved postal datasets and compressed assets when available.
+- Keep generated postal artifacts consistent (`postal-codes.geojson`, `postal-codes.clipped.geojson`, `postal-codes.dissolved.geojson`, plus `.gz` variants).
+- Coop runtime data contract must remain stable at `public/coop_stores.geojson`.
+
+## Failure Handling
+
+- If Coop refresh fails due low output count, set/adjust `COOP_MIN_EXPECTED_STORES` and inspect `.cache/samvirkelag-match-report.json`.
+- If map labels are unavailable, app falls back to polygon-based labels and continues running.
+- If lint/build/test fails, do not ship generated data updates until checks pass.
+
+## Rollback
+
+- The baseline rollback tag for this refactor is:
+  - `backup-pre-stability-refactor-20260316-230442`
+- To inspect/restore:
+
+```bash
+git show backup-pre-stability-refactor-20260316-230442
+git checkout backup-pre-stability-refactor-20260316-230442
 ```
